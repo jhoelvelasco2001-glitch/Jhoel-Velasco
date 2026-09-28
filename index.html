@@ -73,6 +73,36 @@
     .disclaimer { margin: 30px auto 0; max-width: 40ch; font-size: 11.5px; line-height: 1.5; color: #7d7d78; }
     .full { display: inline-block; margin-top: 14px; font-size: 13px; color: var(--mute); border-bottom: 1px solid var(--line); }
     .full:hover { color: var(--accent); }
+    /* Capacitación de inversiones */
+    .train { margin: 12px 0 0; text-align: left; border-radius: 16px; border: 1px solid rgba(228,242,34,.45); background: var(--card); overflow: hidden; }
+    .train summary {
+      list-style: none; cursor: pointer;
+      display: flex; align-items: center; gap: 14px; padding: 16px 18px;
+      background: var(--accent); color: #0a0a0a; font-weight: 700; font-size: 17px;
+      transition: box-shadow .2s;
+    }
+    .train summary::-webkit-details-marker { display: none; }
+    .train summary:hover { box-shadow: inset 0 0 0 999px rgba(0,0,0,.06); }
+    .train summary .ico { font-size: 24px; line-height: 1; }
+    .train summary .ttl { flex: 1; }
+    .train summary small { display: block; font-weight: 500; font-size: 13px; color: rgba(10,10,10,.7); }
+    .train summary .chev { font-size: 22px; transition: transform .3s; }
+    .train[open] summary .chev { transform: rotate(45deg); }
+    .train-body { padding: 18px; }
+    .train-intro { margin: 0 0 16px; font-size: 15px; line-height: 1.55; color: #d6d6cf; }
+    .plan { border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin: 0 0 12px; background: #0f0f0f; }
+    .plan.vip { border-color: rgba(245,135,58,.55); background: linear-gradient(160deg, rgba(245,135,58,.12), #0f0f0f 60%); }
+    .plan-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .plan-price { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; }
+    .plan-price b { color: var(--accent); font-weight: 700; }
+    .plan.vip .plan-price b { color: var(--orange); }
+    .plan-tag { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--mute); }
+    .plan h3 { margin: 6px 0 6px; font-size: 17px; }
+    .plan p { margin: 0 0 14px; font-size: 14.5px; line-height: 1.55; color: #cfcfc8; }
+    .plan-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 999px; background: #25d366; color: #06230f; font-weight: 700; font-size: 14px; transition: transform .2s; }
+    .plan-btn:hover { transform: translateY(-2px); }
+    .plan.vip .plan-btn { background: var(--orange); color: #1a0d03; }
+    .train-warn { margin: 6px 0 0; padding: 12px 14px; border-radius: 12px; background: rgba(255,90,90,.08); border: 1px solid rgba(255,90,90,.3); font-size: 13px; line-height: 1.5; color: #e6c9c9; }
   </style>
 </head>
 <body>
@@ -110,6 +140,40 @@
         ↗
       </a>
     </nav>
+
+    <details class="train">
+      <summary>
+        <span class="ico" aria-hidden="true">📈</span>
+        <span class="ttl">Capacitación de inversiones<small>Planes desde S/50</small></span>
+        <span class="chev" aria-hidden="true">+</span>
+      </summary>
+      <div class="train-body">
+        <p class="train-intro">Aprende conceptos fundamentales sobre inversiones mediante una capacitación adaptada al nivel de profundidad que necesites.</p>
+
+        <article class="plan">
+          <div class="plan-head"><span class="plan-price">💰 <b>S/50</b></span><span class="plan-tag">30 minutos</span></div>
+          <h3>Capacitación básica</h3>
+          <p>Introducción y teoría básica sobre inversiones, conceptos esenciales y funcionamiento general.</p>
+          <a class="plan-btn" href="https://wa.me/51912536501?text=Hola%20Jhoel%2C%20quiero%20la%20Capacitaci%C3%B3n%20b%C3%A1sica%20%28S/50%20-%2030%20minutos%29" target="_blank" rel="noopener">Reservar →</a>
+        </article>
+
+        <article class="plan">
+          <div class="plan-head"><span class="plan-price">📊 <b>S/100</b></span><span class="plan-tag">1 hora</span></div>
+          <h3>Capacitación completa</h3>
+          <p>Explicación más detallada del tema, estrategias, gestión del riesgo y resolución de dudas.</p>
+          <a class="plan-btn" href="https://wa.me/51912536501?text=Hola%20Jhoel%2C%20quiero%20la%20Capacitaci%C3%B3n%20completa%20%28S/100%20-%201%20hora%29" target="_blank" rel="noopener">Reservar →</a>
+        </article>
+
+        <article class="plan vip">
+          <div class="plan-head"><span class="plan-price">👑 <b>S/150</b></span><span class="plan-tag">mensual</span></div>
+          <h3>Membresía VIP mensual</h3>
+          <p>Acceso a demostraciones prácticas de resultados, explicación de las operaciones y acceso a un grupo VIP donde compartiré las inversiones que realizo para que puedas analizarlas y seguirlas bajo tu propia decisión.</p>
+          <a class="plan-btn" href="https://wa.me/51912536501?text=Hola%20Jhoel%2C%20quiero%20unirme%20a%20la%20Membres%C3%ADa%20VIP%20mensual%20%28S/150%29" target="_blank" rel="noopener">Unirme al VIP →</a>
+        </article>
+
+        <p class="train-warn">⚠️ <strong>Importante:</strong> Toda inversión implica riesgo. Los resultados anteriores no garantizan ganancias futuras ni se pueden asegurar beneficios.</p>
+      </div>
+    </details>
 
     <p class="certs-label">Certificados</p>
     <div class="certs">
