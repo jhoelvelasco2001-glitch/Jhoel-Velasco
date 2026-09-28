@@ -47,6 +47,7 @@
     .chip { font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); }
     .chip.lime { color: var(--accent); border-color: rgba(228,242,34,.4); }
     .chip.orange { color: var(--orange); border-color: rgba(245,135,58,.45); }
+    .chip.silver { color: #e2e2e2; border-color: rgba(226,226,226,.5); }
 
     .links { display: grid; gap: 12px; margin: 30px 0 0; }
     .link {
@@ -65,7 +66,7 @@
     .link.ig { --brand: #e1306c; }
     .link.tt { --brand: #25f4ee; }
 
-    .certs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 30px 0 0; }
+    .certs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 30px 0 0; }
     .certs img { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 12px; border: 1px solid var(--line); }
     .certs-label { margin: 30px 0 0; font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--accent); letter-spacing: .08em; text-transform: uppercase; }
     .certs-label + .certs { margin-top: 12px; }
@@ -117,6 +118,7 @@
     <p class="bio">4 años operando los mercados financieros. Te enseño a operar la bolsa con método, gestión de riesgo y la mentalidad correcta.</p>
 
     <div class="chips">
+      <span class="chip silver">Top 5% Trader</span>
       <span class="chip orange">Top 10% Trader</span>
       <span class="chip lime">Challenge superado</span>
       <span class="chip">Coach motivacional</span>
@@ -177,6 +179,7 @@
 
     <p class="certs-label">Certificados</p>
     <div class="certs">
+      <img src="assets/img/cert-top5.webp" alt="Certificado For Traders: TOP 5% Trader, Instrument Ranking, 2026-08-04" width="1000" height="1000" loading="lazy">
       <img src="assets/img/cert-top10.webp" alt="Certificado For Traders: TOP 10% Trader, 2026-09-03" width="1000" height="1000" loading="lazy">
       <img src="assets/img/cert-challenge.webp" alt="Certificado For Traders: Challenge superado, Forex, Master Account, 2026-08-07" width="1000" height="1000" loading="lazy">
     </div>

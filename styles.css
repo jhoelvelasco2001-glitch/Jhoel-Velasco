@@ -174,10 +174,10 @@ em { font-family: var(--serif); font-style: italic; font-weight: 400; }
   display: flex; flex-direction: column; gap: 2px;
   padding: 14px 18px; border-radius: 16px;
   background: rgba(20,20,20,.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(245,135,58,.45);
+  border: 1px solid rgba(232,232,232,.45);
   animation: float 5s ease-in-out infinite;
 }
-.badge-float strong { font-size: 26px; color: var(--orange); letter-spacing: -0.02em; line-height: 1; }
+.badge-float strong { font-size: 26px; color: #e8e8e8; letter-spacing: -0.02em; line-height: 1; }
 .badge-float span { font-family: var(--mono); font-size: 11px; color: var(--mute); letter-spacing: .04em; }
 @keyframes float { 50% { transform: translateY(-10px); } }
 
@@ -208,7 +208,7 @@ section h2 em { color: var(--accent); }
 
 /* ---------- Logros ---------- */
 .proof { background: var(--bg-2); border-block: 1px solid var(--line); }
-.certs { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(20px, 3vw, 40px); margin-top: 50px; }
+.certs { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(20px, 3vw, 40px); margin-top: 50px; }
 .cert {
   background: var(--bg-3); border: 1px solid var(--line); border-radius: var(--radius);
   padding: 14px; transform-style: preserve-3d;
