@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="es" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jhoel 1% — Plataforma de inversión</title>
+  <meta name="description" content="Jhoel 1% es una plataforma de inversión para participar en los mercados financieros sin operar directamente. Rentabilidad objetivo de hasta 1% mensual, gestión de riesgo y programa de referidos.">
+  <meta name="theme-color" content="#050506">
+  <meta property="og:title" content="Jhoel 1% — Plataforma de inversión">
+  <meta property="og:description" content="Tú aportas el capital. Nosotros gestionamos las operaciones bajo estrategias y controles de riesgo.">
+  <meta property="og:image" content="assets/img/logo.webp">
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="styles.css?v=20260929">
+</head>
+<body>
+
+  <!-- Splash: se oculta por JS y, como red de seguridad, por CSS a los 4.5s -->
+  <div class="splash" id="splash" aria-hidden="true">
+    <img src="assets/img/logo.webp" alt="" width="160" height="160">
+    <div class="splash__bar"><span></span></div>
+  </div>
+
+  <div class="cursor-glow" aria-hidden="true"></div>
+
+  <header class="nav" id="nav">
+    <a href="#inicio" class="nav__brand" aria-label="Jhoel 1% — inicio">
+      <img src="assets/img/logo.webp" alt="" width="40" height="40">
+      <span>Jhoel <em>1%</em></span>
+    </a>
+    <nav class="nav__links" id="navLinks" aria-label="Principal">
+      <a href="#que-es">Qué es</a>
+      <a href="#pilares">Por qué</a>
+      <a href="#fundador">Fundador</a>
+      <a href="#planes">Planes</a>
+      <a href="#simulador">Simulador</a>
+      <a href="#retiros">Retiros</a>
+      <a href="#contacto" class="btn btn--gold btn--sm">Quiero invertir</a>
+    </nav>
+    <button class="nav__toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="navLinks">
+      <span></span><span></span>
+    </button>
+  </header>
+
+  <main>
+
+    <!-- HERO -->
+    <section class="hero" id="inicio">
+      <svg class="hero__bars" viewBox="0 0 600 300" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#2f8bff" stop-opacity=".55"/>
+            <stop offset="1" stop-color="#2f8bff" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#b8872b" stop-opacity="0"/>
+            <stop offset=".6" stop-color="#e9c46a"/>
+            <stop offset="1" stop-color="#fff3c4"/>
+          </linearGradient>
+        </defs>
+        <g class="bars">
+          <rect x="40"  y="240" width="34" height="60"  fill="url(#barGrad)"/>
+          <rect x="110" y="215" width="34" height="85"  fill="url(#barGrad)"/>
+          <rect x="180" y="200" width="34" height="100" fill="url(#barGrad)"/>
+          <rect x="250" y="170" width="34" height="130" fill="url(#barGrad)"/>
+          <rect x="320" y="150" width="34" height="150" fill="url(#barGrad)"/>
+          <rect x="390" y="115" width="34" height="185" fill="url(#barGrad)"/>
+          <rect x="460" y="85"  width="34" height="215" fill="url(#barGrad)"/>
+          <rect x="530" y="45"  width="34" height="255" fill="url(#barGrad)"/>
+        </g>
+        <path class="hero__line" d="M0 280 C 120 270, 200 240, 290 200 S 470 110, 600 20" fill="none" stroke="url(#lineGrad)" stroke-width="2.5"/>
+      </svg>
+
+      <div class="hero__inner">
+        <div class="hero__copy">
+          <p class="eyebrow reveal">Plataforma de inversión</p>
+          <h1 class="hero__title reveal">
+            Tú aportas el capital.<br>
+            <span class="gold-text">Nosotros gestionamos</span><br>
+            el riesgo.
+          </h1>
+          <p class="hero__lead reveal">
+            Participa en los mercados financieros sin operar directamente ni necesitar
+            conocimientos avanzados. Rentabilidad objetivo de <strong>hasta 1% mensual</strong>,
+            ampliable con nuestro programa de referidos.
+          </p>
+          <div class="hero__cta reveal">
+            <a href="#simulador" class="btn btn--gold">Simular mi inversión</a>
+            <a href="#que-es" class="btn btn--ghost">Conocer la plataforma</a>
+          </div>
+          <p class="hero__note reveal">Toda inversión implica riesgo. Las rentabilidades son objetivos, no ganancias garantizadas.</p>
+        </div>
+
+        <div class="hero__mark reveal" id="heroMark">
+          <div class="hero__halo" aria-hidden="true"></div>
+          <img src="assets/img/logo.webp" alt="Logotipo de Jhoel 1%" width="1254" height="1254">
+        </div>
+      </div>
+
+      <a href="#cifras" class="hero__scroll" aria-label="Bajar">
+        <span></span>
+      </a>
+    </section>
+
+    <!-- CIFRAS -->
+    <section class="figures" id="cifras" aria-label="Cifras clave">
+      <div class="figure reveal">
+        <span class="figure__num"><span data-count="1" data-decimals="0">1</span>%</span>
+        <span class="figure__label">Rentabilidad objetivo base mensual</span>
+      </div>
+      <div class="figure reveal">
+        <span class="figure__num">+<span data-count="0.01" data-decimals="2">0.01</span>%</span>
+        <span class="figure__label">Por cada referido válido</span>
+      </div>
+      <div class="figure reveal">
+        <span class="figure__num"><span data-count="2" data-decimals="0">2</span>%</span>
+        <span class="figure__label">Tope promocional mensual</span>
+      </div>
+      <div class="figure reveal">
+        <span class="figure__num">$<span data-count="100" data-decimals="0">100</span></span>
+        <span class="figure__label">Inversión mínima (hasta US$100,000)</span>
+      </div>
+    </section>
+
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker__track">
+        <span>Transparencia</span><i>✦</i><span>Gestión profesional</span><i>✦</i><span>Accesibilidad</span><i>✦</i><span>Gestión de riesgo</span><i>✦</i><span>Programa de referidos</span><i>✦</i><span>Retiros ordenados</span><i>✦</i>
+        <span>Transparencia</span><i>✦</i><span>Gestión profesional</span><i>✦</i><span>Accesibilidad</span><i>✦</i><span>Gestión de riesgo</span><i>✦</i><span>Programa de referidos</span><i>✦</i><span>Retiros ordenados</span><i>✦</i>
+      </div>
+    </div>
+
+    <!-- QUÉ ES -->
+    <section class="section about" id="que-es">
+      <div class="section__head">
+        <p class="eyebrow reveal">01 — ¿Qué es Jhoel 1%?</p>
+        <h2 class="reveal">Una forma más sencilla de estar en los mercados.</h2>
+      </div>
+      <div class="about__grid">
+        <div class="about__text">
+          <p class="reveal">
+            Jhoel 1% es una plataforma de inversión creada para personas que desean participar
+            en los mercados financieros sin necesidad de operar directamente ni contar con
+            conocimientos avanzados.
+          </p>
+          <p class="reveal">
+            Nuestro objetivo es administrar el capital mediante estrategias de inversión y
+            gestión de riesgo, buscando generar una rentabilidad mensual para nuestros usuarios
+            de manera clara, accesible y responsable.
+          </p>
+        </div>
+        <aside class="mission reveal">
+          <p class="eyebrow">Nuestra misión</p>
+          <p class="mission__quote">
+            “Una alternativa moderna frente a los productos tradicionales de ahorro e inversión.”
+          </p>
+          <p>
+            Acercamos las oportunidades de los mercados financieros a más personas mediante un
+            sistema sencillo, transparente y orientado al crecimiento a mediano y largo plazo.
+            Construimos una comunidad basada en la confianza, la educación financiera, la
+            disciplina y una adecuada gestión del riesgo.
+          </p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- PILARES -->
+    <section class="section pillars" id="pilares">
+      <div class="section__head">
+        <p class="eyebrow reveal">02 — ¿Por qué elegir Jhoel 1%?</p>
+        <h2 class="reveal">Invertir no tiene por qué ser complicado.</h2>
+        <p class="section__lead reveal">
+          No necesitas analizar ni operar en los mercados. La gestión se realiza bajo
+          estrategias y criterios previamente establecidos.
+        </p>
+      </div>
+      <div class="pillars__grid">
+        <article class="pillar reveal">
+          <span class="pillar__n">01</span>
+          <h3>Transparencia</h3>
+          <p>Información clara sobre el funcionamiento de la plataforma.</p>
+        </article>
+        <article class="pillar reveal">
+          <span class="pillar__n">02</span>
+          <h3>Gestión profesional</h3>
+          <p>Seguimiento y administración de las operaciones.</p>
+        </article>
+        <article class="pillar reveal">
+          <span class="pillar__n">03</span>
+          <h3>Accesibilidad</h3>
+          <p>Planes disponibles para distintos niveles de capital.</p>
+        </article>
+        <article class="pillar reveal">
+          <span class="pillar__n">04</span>
+          <h3>Gestión de riesgo</h3>
+          <p>Criterios orientados a proteger el capital.</p>
+        </article>
+        <article class="pillar reveal">
+          <span class="pillar__n">05</span>
+          <h3>Programa de referidos</h3>
+          <p>Posibilidad de acceder a beneficios adicionales.</p>
+        </article>
+        <article class="pillar reveal">
+          <span class="pillar__n">06</span>
+          <h3>Retiros</h3>
+          <p>Solicitudes procesadas según los términos y condiciones de la plataforma.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- FUNDADOR -->
+    <section class="section founder" id="fundador">
+      <figure class="founder__photo reveal">
+        <img src="assets/img/jhoel-velasco.webp" alt="Jhoel Velasco, CEO y fundador de Jhoel 1%" width="1024" height="1280" loading="lazy">
+        <figcaption>Jhoel Velasco<br><span>CEO y Fundador</span></figcaption>
+      </figure>
+      <div class="founder__text">
+        <p class="eyebrow reveal">03 — Nuestro fundador</p>
+        <h2 class="reveal">Jhoel Velasco</h2>
+        <p class="founder__role reveal">CEO y Fundador de Jhoel 1%</p>
+        <p class="reveal">
+          Con más de <strong>4 años de experiencia</strong> operando en los mercados financieros,
+          Jhoel Velasco ha desarrollado conocimientos en análisis de mercado, gestión de riesgo y
+          estrategias de inversión.
+        </p>
+        <p class="reveal">
+          A partir de esta experiencia nace Jhoel 1%, un proyecto enfocado en facilitar el acceso
+          a las inversiones para personas que desean participar en los mercados sin tener que
+          operar directamente por cuenta propia.
+        </p>
+        <ul class="founder__values reveal">
+          <li>Experiencia</li><li>Disciplina</li><li>Estrategia</li><li>Tecnología</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- PLANES -->
+    <section class="section plans" id="planes">
+      <div class="section__head">
+        <p class="eyebrow reveal">04 — Planes de inversión</p>
+        <h2 class="reveal">Desde <span class="gold-text">US$100</span> hasta <span class="gold-text">US$100,000</span>.</h2>
+        <p class="section__lead reveal">Todos los planes acceden al mismo modelo de rentabilidad de la plataforma.</p>
+      </div>
+
+      <div class="plans__grid">
+        <article class="plan reveal">
+          <p class="plan__tag">Base</p>
+          <p class="plan__rate">hasta <strong>1%</strong><span>mensual</span></p>
+          <p>Rentabilidad objetivo para todos los planes, desde el primer dólar invertido.</p>
+        </article>
+        <article class="plan plan--featured reveal">
+          <p class="plan__tag">Referidos</p>
+          <p class="plan__rate">+<strong>0.01%</strong><span>por referido válido</span></p>
+          <p>Acumulable hasta un máximo adicional de <strong>+1%</strong>, para una rentabilidad promocional total de hasta <strong>2% mensual</strong>.</p>
+        </article>
+        <article class="plan reveal">
+          <p class="plan__tag">Lanzamiento</p>
+          <p class="plan__rate">hasta <strong>2%</strong><span>primeros 3 meses</span></p>
+          <p>Para los primeros usuarios elegibles. Luego la cuenta continúa bajo las condiciones regulares de su plan.</p>
+        </article>
+      </div>
+
+      <div class="ladder reveal" aria-label="Escala de referidos">
+        <div class="ladder__bar"><span id="ladderFill"></span></div>
+        <div class="ladder__labels">
+          <span>0 referidos<br><b>1.00%</b></span>
+          <span>25<br><b>1.25%</b></span>
+          <span>50<br><b>1.50%</b></span>
+          <span>75<br><b>1.75%</b></span>
+          <span>100<br><b>2.00%</b></span>
+        </div>
+      </div>
+      <p class="fine reveal">Beneficios sujetos a términos, condiciones, disponibilidad y criterios de elegibilidad del programa.</p>
+    </section>
+
+    <!-- SIMULADOR -->
+    <section class="section sim" id="simulador">
+      <div class="section__head">
+        <p class="eyebrow reveal">05 — Simulador</p>
+        <h2 class="reveal">Visualiza tu proyección.</h2>
+        <p class="section__lead reveal">Una herramienta ilustrativa para entender el modelo. No representa una promesa de resultados.</p>
+      </div>
+
+      <div class="sim__card reveal">
+        <form class="sim__controls" id="simForm" onsubmit="return false">
+          <div class="field">
+            <label for="simCapital">Capital inicial <output id="outCapital">US$1,000</output></label>
+            <input type="range" id="simCapital" min="100" max="100000" step="100" value="1000">
+            <input type="number" id="simCapitalNum" min="100" max="100000" step="100" value="1000" aria-label="Capital inicial en dólares">
+          </div>
+          <div class="field">
+            <label for="simRefs">Referidos válidos <output id="outRefs">0</output></label>
+            <input type="range" id="simRefs" min="0" max="100" step="1" value="0">
+          </div>
+          <div class="field">
+            <label for="simMonths">Plazo <output id="outMonths">12 meses</output></label>
+            <input type="range" id="simMonths" min="1" max="36" step="1" value="12">
+          </div>
+          <div class="field field--row">
+            <label class="switch"><input type="checkbox" id="simPromo" checked><span></span> Promoción de lanzamiento (2% los 3 primeros meses)</label>
+          </div>
+          <div class="field field--row">
+            <label class="switch"><input type="checkbox" id="simCompound"><span></span> Reinvertir la rentabilidad mensual</label>
+          </div>
+        </form>
+
+        <div class="sim__result" aria-live="polite">
+          <div class="sim__kpis">
+            <div><span>Tasa mensual aplicada</span><strong id="resRate">1.00%</strong></div>
+            <div><span>Rentabilidad estimada</span><strong id="resGain" class="gold-text">US$0</strong></div>
+            <div><span>Total proyectado</span><strong id="resTotal">US$0</strong></div>
+          </div>
+          <div class="sim__chart" id="simChart" role="img" aria-label="Proyección mensual del capital"></div>
+          <p class="fine">
+            Cálculo referencial basado en la rentabilidad <em>objetivo</em> máxima de la plataforma.
+            Los resultados reales pueden ser menores, nulos o negativos. No constituye asesoría financiera.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- RETIROS + RIESGO -->
+    <section class="section trust" id="retiros">
+      <article class="trust__block reveal">
+        <p class="eyebrow">06 — Retiros y disponibilidad del capital</p>
+        <h3>Un proceso claro, ordenado y transparente.</h3>
+        <p>
+          Los usuarios pueden solicitar el retiro de su capital de acuerdo con las condiciones
+          establecidas por la plataforma. Las solicitudes se procesan dentro de los plazos
+          operativos indicados en los términos y condiciones.
+        </p>
+      </article>
+      <article class="trust__block trust__block--risk reveal" id="riesgo">
+        <p class="eyebrow">07 — Seguridad, transparencia y riesgo</p>
+        <h3>Hablemos claro sobre el riesgo.</h3>
+        <p>
+          Toda inversión en mercados financieros implica riesgo y los resultados pueden variar.
+          Jhoel 1% aplica estrategias de análisis y gestión de riesgo orientadas a proteger el
+          capital y buscar resultados sostenibles. Sin embargo, ninguna inversión es completamente
+          libre de riesgo y las rentabilidades <strong>no deben interpretarse como ganancias garantizadas</strong>.
+        </p>
+        <p>
+          Antes de invertir, cada usuario deberá revisar y aceptar los términos y condiciones,
+          políticas de retiro y riesgos asociados al servicio.
+        </p>
+      </article>
+    </section>
+
+    <!-- PROPUESTA / CONTACTO -->
+    <section class="section cta" id="contacto">
+      <div class="cta__glow" aria-hidden="true"></div>
+      <p class="eyebrow reveal">Nuestra propuesta</p>
+      <h2 class="reveal">Tú aportas el capital.<br><span class="gold-text">Nosotros nos encargamos del resto.</span></h2>
+      <p class="section__lead reveal">
+        Una experiencia de inversión sencilla, transparente y enfocada en el crecimiento
+        responsable del capital. Déjanos tus datos y te contactaremos.
+      </p>
+
+      <form class="contact reveal" id="contactForm" novalidate>
+        <div class="contact__row">
+          <label>Nombre<input type="text" name="nombre" required autocomplete="name"></label>
+          <label>Teléfono / WhatsApp<input type="tel" name="telefono" required autocomplete="tel"></label>
+        </div>
+        <div class="contact__row">
+          <label>Correo<input type="email" name="correo" autocomplete="email"></label>
+          <label>Monto que te interesa
+            <select name="monto">
+              <option>US$100 – US$1,000</option>
+              <option>US$1,000 – US$10,000</option>
+              <option>US$10,000 – US$50,000</option>
+              <option>US$50,000 – US$100,000</option>
+            </select>
+          </label>
+        </div>
+        <label class="check"><input type="checkbox" name="acepto" required> He leído que toda inversión implica riesgo y que las rentabilidades no están garantizadas.</label>
+        <button type="submit" class="btn btn--gold">Enviar por WhatsApp</button>
+        <p class="contact__msg" id="contactMsg" role="status"></p>
+      </form>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer__brand">
+      <img src="assets/img/logo.webp" alt="" width="56" height="56" loading="lazy">
+      <p>Jhoel <em>1%</em></p>
+    </div>
+    <p class="footer__legal">
+      <strong>Aviso de riesgo:</strong> invertir en mercados financieros implica riesgo, incluida la
+      posible pérdida parcial o total del capital. Las cifras de “hasta 1%” y “hasta 2%” mensual son
+      rentabilidades objetivo o promocionales y no constituyen una garantía ni una promesa de
+      resultados. Rentabilidades pasadas no aseguran rentabilidades futuras. El programa de referidos y
+      la promoción de lanzamiento están sujetos a términos, condiciones, disponibilidad y criterios de
+      elegibilidad. La información de este sitio no constituye asesoría financiera.
+    </p>
+    <p class="footer__copy">© <span id="year">2026</span> Jhoel 1%. Todos los derechos reservados.</p>
+  </footer>
+
+  <script src="main.js?v=20260929" defer></script>
+</body>
+</html>
