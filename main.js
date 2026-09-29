@@ -246,7 +246,7 @@
       var nombre = (d.get('nombre') || '').toString().trim();
       var tel = (d.get('telefono') || '').toString().trim();
       if (!nombre || !tel) { msg.textContent = 'Por favor completa tu nombre y teléfono.'; msg.classList.add('is-error'); return; }
-      if (!d.get('acepto')) { msg.textContent = 'Debes confirmar que leíste el aviso de riesgo.'; msg.classList.add('is-error'); return; }
+      if (!d.get('acepto')) { msg.textContent = 'Debes aceptar los Términos y Condiciones para continuar.'; msg.classList.add('is-error'); return; }
 
       var text = 'Hola, quiero información sobre Jhoel 1%.\n' +
         'Nombre: ' + nombre + '\n' +
