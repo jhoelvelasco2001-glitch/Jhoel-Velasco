@@ -8,7 +8,7 @@
   var CONFIG = {
     // Número de WhatsApp con código de país, solo dígitos (ej. Perú: 51987654321).
     // Mientras esté vacío, el formulario mostrará un aviso en lugar de abrir WhatsApp.
-    whatsapp: '',
+    whatsapp: '51912536501',
     baseRate: 1.0,          // % mensual objetivo base
     perReferral: 0.01,      // % adicional por referido válido
     maxBonus: 1.0,          // % adicional máximo por referidos
@@ -258,9 +258,13 @@
         msg.textContent = 'Gracias, ' + nombre + '. El canal de contacto se habilitará muy pronto.';
         return;
       }
-      window.open('https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
-      msg.textContent = 'Abriendo WhatsApp…';
-      form.reset();
+      var url = 'https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(text);
+      var win = window.open(url, '_blank', 'noopener');
+      msg.textContent = win ? 'Abriendo WhatsApp… ' : 'Tu mensaje está listo. ';
+      var link = document.createElement('a');
+      link.href = url; link.target = '_blank'; link.rel = 'noopener';
+      link.textContent = 'Si no se abrió, toca aquí para enviarlo por WhatsApp.';
+      msg.appendChild(link);
     });
   }
 
