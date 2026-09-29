@@ -436,6 +436,37 @@ input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius
 .wa-float:hover { transform: scale(1.08); }
 @media (max-width: 640px) { .contact__row { grid-template-columns: 1fr; } .contact .btn { justify-self: stretch; } }
 
+/* ---------- Términos y Condiciones ---------- */
+.terms-sec__date { font-size: .85rem; color: var(--muted); letter-spacing: .04em; }
+.terms-sec__actions { margin-top: 8px; }
+.clauses { border-top: 1px solid var(--line-soft); max-width: 900px; }
+.clause { border-bottom: 1px solid var(--line-soft); }
+.clause summary {
+  list-style: none; cursor: pointer;
+  display: flex; align-items: baseline; gap: 18px;
+  padding: 22px 40px 22px 0; position: relative;
+  font: 600 clamp(1.2rem, 2vw, 1.5rem)/1.25 var(--serif);
+  transition: color .3s;
+}
+.clause summary::-webkit-details-marker { display: none; }
+.clause summary::after {
+  content: "+"; position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  font: 300 1.6rem/1 var(--sans); color: var(--gold); transition: transform .3s var(--ease);
+}
+.clause[open] summary::after { transform: translateY(-50%) rotate(45deg); }
+.clause summary:hover, .clause[open] summary { color: var(--gold-3); }
+.clause summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+.clause__n { font: 600 .78rem/1 var(--sans); letter-spacing: .12em; color: var(--blue); flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+.clause__body { padding: 0 0 24px 38px; color: var(--muted); max-width: 72ch; }
+.clause__body ul { margin: 0 0 1em; padding-left: 1.2em; }
+.clause__body li { margin-bottom: .35em; }
+.clause__body li::marker { color: var(--gold); }
+@media (max-width: 560px) { .clause__body { padding-left: 0; } }
+
+.contact .check a, .footer__links a { color: var(--gold); }
+.footer__links { display: flex; flex-wrap: wrap; gap: 10px 24px; font-size: .85rem; }
+.footer__links a { text-decoration: none; border-bottom: 1px solid var(--line); }
+
 /* ---------- Footer ---------- */
 .footer { position: relative; z-index: 1; border-top: 1px solid var(--line-soft); padding: 56px var(--gutter) 40px; max-width: var(--max); margin: 0 auto; display: grid; gap: 24px; }
 .footer__brand { display: flex; align-items: center; gap: 14px; }

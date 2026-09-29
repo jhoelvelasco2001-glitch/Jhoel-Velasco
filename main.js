@@ -268,6 +268,17 @@
     });
   }
 
+  function initTerms() {
+    var btn = document.getElementById('termsToggle');
+    var items = [].slice.call(document.querySelectorAll('.clause'));
+    if (!btn || !items.length) return;
+    btn.addEventListener('click', function () {
+      var open = items.some(function (d) { return !d.open; });
+      items.forEach(function (d) { d.open = open; });
+      btn.textContent = open ? 'Cerrar todas las cláusulas' : 'Abrir todas las cláusulas';
+    });
+  }
+
   function initYear() {
     var y = document.getElementById('year');
     if (y) y.textContent = new Date().getFullYear();
@@ -281,6 +292,7 @@
     safe(initPointer, 'pointer');
     safe(initSimulator, 'simulator');
     safe(initContact, 'contact');
+    safe(initTerms, 'terms');
     safe(initYear, 'year');
   }
 
