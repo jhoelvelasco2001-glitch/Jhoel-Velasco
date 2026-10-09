@@ -415,38 +415,24 @@ end $$;
 --   tasa objetivo = 2% si el periodo termina dentro de la promoción, si no 1% + bono de referidos
 --   tasa aplicada = la menor entre la tasa objetivo y el resultado real del mes
 -- Con p_commit = false solo muestra la vista previa; con true la acredita.
-create or replace function public.admin_credit_profits(p_real_result numeric, p_commit boolean default false, p_note text default null)
+create or replace function public.credit_rows(p_real numeric)
 returns table (
   user_id uuid, name text, capital numeric, period_start date, period_end date,
   target numeric, applied numeric, amount numeric
-) language plpgsql volatile security definer set search_path = public as $$
-declare v_count int := 0; v_total numeric := 0;
-begin
-  perform public.assert_admin();
-  if p_real_result is null or p_real_result < 0 or p_real_result > 10 then
-    raise exception 'Indica el resultado real del mes (entre 0%% y 10%%).';
-  end if;
-
-  create temporary table if not exists _credit (
-    user_id uuid, name text, capital numeric, period_start date, period_end date,
-    target numeric, applied numeric, amount numeric
-  ) on commit drop;
-  truncate _credit;
-
-  insert into _credit
+) language sql stable security definer set search_path = public as $$
   select i.user_id,
          trim(p.first_name || ' ' || p.last_name),
          i.capital,
          (i.start_date + make_interval(months => n.paid))::date,
          (i.start_date + make_interval(months => n.paid + 1))::date,
          t.target,
-         least(t.target, p_real_result),
-         round(i.capital * least(t.target, p_real_result) / 100, 2)
+         least(t.target, p_real),
+         round(i.capital * least(t.target, p_real) / 100, 2)
   from public.investments i
   join public.profiles p on p.id = i.user_id
   cross join lateral (
-    select count(*)::int as paid from public.movements m where m.user_id = i.user_id and m.kind = 'profit'
-      and m.period_start >= i.start_date
+    select count(*)::int as paid from public.movements m
+     where m.user_id = i.user_id and m.kind = 'profit' and m.period_start >= i.start_date
   ) n
   cross join lateral (
     select case
@@ -457,19 +443,36 @@ begin
   ) t
   where i.status = 'active'
     and (i.start_date + make_interval(months => n.paid + 1))::date <= current_date;
+$$;
 
+create or replace function public.admin_credit_profits(p_real_result numeric, p_commit boolean default false, p_note text default null)
+returns table (
+  user_id uuid, name text, capital numeric, period_start date, period_end date,
+  target numeric, applied numeric, amount numeric
+) language plpgsql volatile security definer set search_path = public as $$
+declare r record; v_count int := 0; v_total numeric := 0;
+begin
+  perform public.assert_admin();
+  if p_real_result is null or p_real_result < 0 or p_real_result > 10 then
+    raise exception 'Indica el resultado real del mes (entre 0%% y 10%%).';
+  end if;
+  for r in select * from public.credit_rows(p_real_result) c order by c.name loop
+    user_id := r.user_id; name := r.name; capital := r.capital;
+    period_start := r.period_start; period_end := r.period_end;
+    target := r.target; applied := r.applied; amount := r.amount;
+    return next;
+    if p_commit and r.amount > 0 then
+      insert into public.movements (user_id, kind, amount, rate, detail, period_start, period_end, created_by)
+      values (r.user_id, 'profit', r.amount, r.applied,
+              'Rentabilidad ' || to_char(r.applied, 'FM0.00') || '% sobre US$' || to_char(r.capital, 'FM999,999.00'),
+              r.period_start, r.period_end, auth.uid());
+      v_count := v_count + 1; v_total := v_total + r.amount;
+    end if;
+  end loop;
   if p_commit then
-    insert into public.movements (user_id, kind, amount, rate, detail, period_start, period_end, created_by)
-    select c.user_id, 'profit', c.amount, c.applied,
-           'Rentabilidad ' || to_char(c.applied, 'FM0.00') || '% sobre US$' || to_char(c.capital, 'FM999G999D00'),
-           c.period_start, c.period_end, auth.uid()
-    from _credit c where c.amount > 0;
-    select count(*), coalesce(sum(c.amount), 0) into v_count, v_total from _credit c where c.amount > 0;
     insert into public.monthly_results (real_result, note, credited, total, created_by)
     values (p_real_result, p_note, v_count, v_total, auth.uid());
   end if;
-
-  return query select * from _credit order by 2;
 end $$;
 
 -- ----------------------------------------------------------------------------
@@ -485,40 +488,39 @@ alter table public.monthly_results     enable row level security;
 
 drop policy if exists "perfil propio o admin" on public.profiles;
 create policy "perfil propio o admin" on public.profiles
-  for select using (id = auth.uid() or public.is_admin());
+  for select to authenticated using (id = (select auth.uid()) or public.is_admin());
 drop policy if exists "admin edita perfiles" on public.profiles;
 create policy "admin edita perfiles" on public.profiles
-  for update using (public.is_admin()) with check (public.is_admin());
+  for update to authenticated using (public.is_admin()) with check (public.is_admin());
 
 drop policy if exists "inversion propia o admin" on public.investments;
 create policy "inversion propia o admin" on public.investments
-  for select using (user_id = auth.uid() or public.is_admin());
+  for select to authenticated using (user_id = (select auth.uid()) or public.is_admin());
 
 drop policy if exists "movimientos propios o admin" on public.movements;
 create policy "movimientos propios o admin" on public.movements
-  for select using (user_id = auth.uid() or public.is_admin());
+  for select to authenticated using (user_id = (select auth.uid()) or public.is_admin());
 
 drop policy if exists "retiros propios o admin" on public.withdrawal_requests;
 create policy "retiros propios o admin" on public.withdrawal_requests
-  for select using (user_id = auth.uid() or public.is_admin());
+  for select to authenticated using (user_id = (select auth.uid()) or public.is_admin());
 
 drop policy if exists "documentos propios o admin" on public.kyc_docs;
 create policy "documentos propios o admin" on public.kyc_docs
-  for select using (user_id = auth.uid() or public.is_admin());
+  for select to authenticated using (user_id = (select auth.uid()) or public.is_admin());
 
 drop policy if exists "resultados solo admin" on public.monthly_results;
 create policy "resultados solo admin" on public.monthly_results
-  for select using (public.is_admin());
+  for select to authenticated using (public.is_admin());
 
 -- Los cambios de dinero solo se hacen con las funciones de arriba.
-revoke insert, update, delete on public.investments, public.movements,
+revoke insert, update, delete, truncate on public.investments, public.movements,
   public.withdrawal_requests, public.kyc_docs, public.monthly_results from anon, authenticated;
-revoke insert, delete on public.profiles from anon, authenticated;
-revoke update on public.profiles from anon;
+revoke insert, delete, truncate on public.profiles from anon, authenticated;
 revoke all on all tables in schema public from anon;
 
 -- Funciones: solo usuarios con sesión
-revoke execute on all functions in schema public from public, anon;
+revoke execute on all functions in schema public from public, anon, authenticated;
 grant execute on function
   public.is_admin(), public.valid_referrals(uuid), public.target_rate(uuid), public.available_profits(uuid),
   public.my_referrals(), public.request_withdrawal(text, numeric, text, text), public.submit_kyc_doc(text, text),

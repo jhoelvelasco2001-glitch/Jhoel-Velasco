@@ -8,8 +8,8 @@
   'use strict';
 
   var CONFIG = {
-    supabaseUrl: '',        // ej. 'https://abcdefghijk.supabase.co'
-    supabaseAnonKey: '',    // ej. 'eyJhbGciOiJIUzI1NiIsInR5cCI6...'
+    supabaseUrl: 'https://zyejqrogqffwmuxtmeyq.supabase.co',
+    supabaseAnonKey: 'sb_publishable_hhBHvljHnzDCTjj9eU833Q_kprFkm52',
     siteUrl: 'https://jhoel1.com',
     whatsapp: '51912536501'
   };
