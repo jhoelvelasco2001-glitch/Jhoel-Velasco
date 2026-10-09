@@ -78,7 +78,7 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 600; line-height: 1.1; marg
 }
 
 .side {
-  position: sticky; top: 0; height: 100vh;
+  position: sticky; top: 0; height: 100vh; align-self: start;
   display: flex; flex-direction: column; gap: 28px;
   padding: 24px 16px;
 }
@@ -359,3 +359,33 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 600; line-height: 1.1; marg
 @media (prefers-reduced-motion: reduce) {
   .view { animation: none; }
 }
+
+/* ---------- Páginas centradas (nueva contraseña) ---------- */
+.center-page { display: grid; place-items: center; padding: 24px 16px; }
+.center-card { width: 100%; max-width: 440px; }
+.center-card h1 { font-size: 2rem; margin-bottom: 4px; }
+.center-logo { width: 64px; height: 64px; border-radius: 16px; margin-bottom: 18px; }
+
+/* ---------- Carga ---------- */
+.loading {
+  position: fixed; inset: 0; z-index: 100;
+  display: grid; place-content: center; justify-items: center; gap: 16px;
+  background: var(--bg); color: var(--muted); font-size: .9rem;
+  transition: opacity .4s, visibility .4s;
+}
+.loading img { width: 72px; height: 72px; border-radius: 18px; animation: pulse 1.4s ease-in-out infinite; }
+.loading.is-done { opacity: 0; visibility: hidden; pointer-events: none; }
+@keyframes pulse { 50% { transform: scale(1.06); opacity: .8; } }
+
+/* ---------- Bienvenida ---------- */
+.welcome h3 { font-size: 1.7rem; }
+.steps { list-style: none; margin: 18px 0 22px; padding: 0; display: grid; gap: 12px; }
+.steps li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; align-items: start; }
+.steps__n { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; background: rgba(233,196,106,.14); color: var(--gold); }
+.steps li.is-done .steps__n { background: rgba(95,211,141,.15); color: var(--ok); }
+.steps strong { display: block; }
+.steps span { font-size: .85rem; color: var(--muted); }
+.steps a { color: var(--gold); }
+.side__admin { color: var(--gold) !important; margin-top: 8px; border: 1px dashed var(--line); }
+.kyc .pill--bad + .btn, .kyc .pill--warn { justify-self: end; }
+.kyc__side { display: grid; justify-items: end; gap: 6px; }

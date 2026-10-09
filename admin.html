@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Administración — Jhoel 1%</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#050506">
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="panel.css?v=20261009b">
+  <link rel="stylesheet" href="admin.css?v=20261009">
+</head>
+<body class="is-admin">
+
+  <div class="loading" id="loading" aria-live="polite"><img src="assets/img/logo.webp" alt="" width="72" height="72"><span>Cargando administración…</span></div>
+
+  <div class="demo-bar" id="demoBar">
+    <strong>Modo demostración</strong> · Datos de ejemplo. Los cambios que hagas aquí no se guardan.
+  </div>
+
+  <div class="app">
+    <aside class="side" aria-label="Menú de administración">
+      <a href="index.html" class="side__brand" aria-label="Ir a la página principal">
+        <img src="assets/img/logo.webp" alt="" width="40" height="40">
+        <span class="notranslate" translate="no">Jhoel <em>1%</em></span>
+      </a>
+      <p class="side__tag">Administración</p>
+      <nav class="side__nav">
+        <a href="#resumen" data-view="resumen" class="is-active">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h8V3H3zm10 8h8V11h-8zM3 21h8v-6H3zm10-18v6h8V3z"/></svg>
+          <span>Resumen</span>
+        </a>
+        <a href="#inversionistas" data-view="inversionistas">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 10c0-4 3-6 7-6s7 2 7 6m1-10a3 3 0 1 0 0-6m2 16c0-3-1.5-5-4-5.6"/></svg>
+          <span>Inversionistas</span>
+        </a>
+        <a href="#retiros" data-view="retiros">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3"/></svg>
+          <span>Retiros</span><b class="badge" id="badgeW" hidden></b>
+        </a>
+        <a href="#verificaciones" data-view="verificaciones">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3Zm-3 9 2 2 4-4"/></svg>
+          <span>Verificaciones</span><b class="badge" id="badgeK" hidden></b>
+        </a>
+        <a href="#rentabilidad" data-view="rentabilidad">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19 10 13l4 4 6-8M14 9h6v6"/></svg>
+          <span>Rentabilidad</span>
+        </a>
+      </nav>
+      <div class="side__foot">
+        <a href="panel.html">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-8 9c0-4 3.5-6 8-6s8 2 8 6"/></svg>
+          Ver mi panel
+        </a>
+        <a href="index.html" id="logout">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg>
+          Cerrar sesión
+        </a>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="top">
+        <div class="top__hello">
+          <p class="top__eyebrow" id="today">—</p>
+          <h1>Administración</h1>
+        </div>
+        <div class="top__actions">
+          <button type="button" class="btn btn--ghost btn--sm" id="refresh">Actualizar</button>
+        </div>
+      </header>
+
+      <!-- ============ RESUMEN ============ -->
+      <section class="view" id="view-resumen" aria-labelledby="h-a-res">
+        <h2 class="sr-only" id="h-a-res">Resumen</h2>
+        <div class="kpis kpis--5">
+          <article class="kpi kpi--hero">
+            <p class="kpi__label">Capital administrado</p>
+            <p class="kpi__value" id="sCapital">—</p>
+            <p class="kpi__meta">Inversiones activas y en cierre</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi__label">Inversionistas</p>
+            <p class="kpi__value" id="sInvestors">—</p>
+            <p class="kpi__meta" id="sInvestorsMeta">—</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi__label">Retiros por atender</p>
+            <p class="kpi__value kpi__value--gold" id="sWithdrawals">—</p>
+            <p class="kpi__meta" id="sWithdrawalsMeta">—</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi__label">Verificaciones</p>
+            <p class="kpi__value" id="sKyc">—</p>
+            <p class="kpi__meta">Personas con documentos por revisar</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi__label">Rentabilidad del mes</p>
+            <p class="kpi__value" id="sProfits">—</p>
+            <p class="kpi__meta">Acreditada este mes calendario</p>
+          </article>
+        </div>
+
+        <div class="grid-2 grid-2--even">
+          <article class="card">
+            <header class="card__head">
+              <div><h3>Retiros por atender</h3><p class="card__sub">Plazo: ganancias 48 h · capital 7 días hábiles</p></div>
+              <a href="#retiros" data-view="retiros" class="card__link">Ver todos</a>
+            </header>
+            <ul class="feed" id="homeW"></ul>
+          </article>
+          <article class="card">
+            <header class="card__head">
+              <div><h3>Verificaciones por revisar</h3></div>
+              <a href="#verificaciones" data-view="verificaciones" class="card__link">Revisar</a>
+            </header>
+            <ul class="feed" id="homeK"></ul>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============ INVERSIONISTAS ============ -->
+      <section class="view" id="view-inversionistas" aria-labelledby="h-a-inv" hidden>
+        <header class="view__head">
+          <h2 id="h-a-inv">Inversionistas</h2>
+          <label class="search">
+            <span class="sr-only">Buscar inversionista</span>
+            <input type="search" id="invSearch" placeholder="Buscar por nombre, correo o código" autocomplete="off">
+          </label>
+        </header>
+        <div class="card card--flush">
+          <div class="table-wrap">
+            <table class="table table--click">
+              <thead><tr><th>Inversionista</th><th>Verificación</th><th class="num">Capital</th><th class="num">Disponible</th><th class="num">Referidos</th><th class="num">Tasa obj.</th><th>Estado</th></tr></thead>
+              <tbody id="invBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ RETIROS ============ -->
+      <section class="view" id="view-retiros" aria-labelledby="h-a-ret" hidden>
+        <header class="view__head">
+          <h2 id="h-a-ret">Retiros</h2>
+          <div class="chips" aria-label="Filtrar retiros">
+            <button type="button" class="chip is-on" data-wfilter="open">Por atender</button>
+            <button type="button" class="chip" data-wfilter="paid">Pagados</button>
+            <button type="button" class="chip" data-wfilter="rejected">Rechazados</button>
+            <button type="button" class="chip" data-wfilter="all">Todos</button>
+          </div>
+        </header>
+        <div class="card card--flush">
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Solicitado</th><th>Inversionista</th><th>Tipo</th><th class="num">Monto</th><th>Destino</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody id="wBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ VERIFICACIONES ============ -->
+      <section class="view" id="view-verificaciones" aria-labelledby="h-a-kyc" hidden>
+        <header class="view__head"><h2 id="h-a-kyc">Verificaciones</h2></header>
+        <p class="view__lead">Una cuenta queda verificada cuando sus tres documentos están aprobados. También puedes cambiar el estado a mano desde la ficha del inversionista.</p>
+        <div class="card card--flush">
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Enviado</th><th>Inversionista</th><th>Documento</th><th>Archivo</th><th>Acciones</th></tr></thead>
+              <tbody id="kBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ RENTABILIDAD ============ -->
+      <section class="view" id="view-rentabilidad" aria-labelledby="h-a-prof" hidden>
+        <header class="view__head"><h2 id="h-a-prof">Rentabilidad del mes</h2></header>
+
+        <div class="grid-2">
+          <article class="card">
+            <header class="card__head">
+              <div>
+                <h3>Acreditar rentabilidad</h3>
+                <p class="card__sub">Cada inversión cobra en su fecha mensual. Se acredita la menor entre su tasa objetivo y el resultado real que registres.</p>
+              </div>
+            </header>
+            <form class="form" id="pForm" novalidate>
+              <label for="pReal">Resultado real de la estrategia este mes (%)
+                <input type="number" id="pReal" min="0" max="10" step="0.01" inputmode="decimal" placeholder="Ej. 1.85">
+              </label>
+              <label for="pNote">Nota interna (opcional)
+                <input type="text" id="pNote" placeholder="Ej. Cierre de octubre 2026">
+              </label>
+              <button type="submit" class="btn btn--ghost">Calcular vista previa</button>
+              <p class="form__msg" id="pMsg" role="status"></p>
+            </form>
+          </article>
+          <article class="card card--quiet">
+            <header class="card__head"><div><h3>Cómo se calcula</h3></div></header>
+            <ul class="rules">
+              <li><b>Tasa objetivo:</b> 1% + 0.01% por referido válido (máximo 2%). Durante la promoción de lanzamiento, 2%.</li>
+              <li><b>Tasa aplicada:</b> la menor entre la tasa objetivo y el resultado real del mes.</li>
+              <li><b>Periodos:</b> solo se acreditan los periodos mensuales ya cumplidos. Si alguien tiene dos meses pendientes, ejecuta el cálculo dos veces.</li>
+              <li><b>Sin duplicados:</b> un mismo periodo nunca se acredita dos veces.</li>
+            </ul>
+          </article>
+        </div>
+
+        <article class="card card--flush" id="pPreview" hidden>
+          <header class="card__head card__head--pad">
+            <div><h3>Vista previa</h3><p class="card__sub" id="pSummary">—</p></div>
+          </header>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Inversionista</th><th>Periodo</th><th class="num">Capital</th><th class="num">Objetivo</th><th class="num">Aplicada</th><th class="num">Monto</th></tr></thead>
+              <tbody id="pBody"></tbody>
+            </table>
+          </div>
+          <div class="card__foot">
+            <button type="button" class="btn btn--gold" id="pCommit">Acreditar</button>
+            <div class="confirm" id="pConfirm" hidden>
+              <p id="pConfirmText">—</p>
+              <div class="confirm__btns">
+                <button type="button" class="btn btn--gold btn--sm" id="pYes">Sí, acreditar</button>
+                <button type="button" class="btn btn--ghost btn--sm" id="pNo">Cancelar</button>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card card--flush">
+          <header class="card__head card__head--pad"><div><h3>Historial de cierres</h3></div></header>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Fecha</th><th class="num">Resultado real</th><th class="num">Cuentas</th><th class="num">Total acreditado</th><th>Nota</th></tr></thead>
+              <tbody id="rBody"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </div>
+  </div>
+
+  <nav class="tabbar" aria-label="Menú de administración">
+    <a href="#resumen" data-view="resumen" class="is-active"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h8V3H3zm10 8h8V11h-8zM3 21h8v-6H3zm10-18v6h8V3z"/></svg><span>Resumen</span></a>
+    <a href="#inversionistas" data-view="inversionistas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 10c0-4 3-6 7-6s7 2 7 6"/></svg><span>Personas</span></a>
+    <a href="#retiros" data-view="retiros"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3"/></svg><span>Retiros</span></a>
+    <a href="#verificaciones" data-view="verificaciones"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3Zm-3 9 2 2 4-4"/></svg><span>Verificar</span></a>
+    <a href="#rentabilidad" data-view="rentabilidad"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19 10 13l4 4 6-8M14 9h6v6"/></svg><span>Rentab.</span></a>
+  </nav>
+
+  <!-- Ficha del inversionista -->
+  <div class="drawer" id="drawer" hidden>
+    <div class="drawer__backdrop" data-close></div>
+    <aside class="drawer__panel" role="dialog" aria-modal="true" aria-labelledby="dName">
+      <button type="button" class="auth__close" data-close aria-label="Cerrar">×</button>
+      <p class="top__eyebrow" id="dCode">—</p>
+      <h2 id="dName">—</h2>
+      <p class="card__sub" id="dContact">—</p>
+
+      <dl class="data" id="dData"></dl>
+
+      <section class="drawer__sec">
+        <h3>Verificación de identidad</h3>
+        <div class="inline-form">
+          <select id="dKyc" aria-label="Estado de verificación">
+            <option value="pending">Pendiente</option>
+            <option value="in_review">En revisión</option>
+            <option value="verified">Verificado</option>
+            <option value="rejected">Rechazado</option>
+          </select>
+          <button type="button" class="btn btn--ghost btn--sm" id="dKycSave">Guardar</button>
+        </div>
+      </section>
+
+      <section class="drawer__sec">
+        <h3 id="dDepTitle">Registrar depósito</h3>
+        <form class="form" id="dDeposit" novalidate>
+          <div class="auth__grid">
+            <label for="dAmount">Monto (US$)<input type="number" id="dAmount" min="1" step="0.01" inputmode="decimal"></label>
+            <label for="dStart" id="dStartWrap">Fecha de inicio<input type="date" id="dStart"></label>
+          </div>
+          <label for="dDetail">Medio / referencia<input type="text" id="dDetail" placeholder="Ej. Transferencia BCP op. 123456"></label>
+          <label class="check" id="dPromoWrap"><input type="checkbox" id="dPromo"> <span>Aplicar promoción de lanzamiento (2% los primeros 3 meses)</span></label>
+          <button type="submit" class="btn btn--gold">Registrar depósito</button>
+          <p class="form__msg" id="dMsg" role="status"></p>
+        </form>
+      </section>
+
+      <section class="drawer__sec">
+        <h3>Movimientos</h3>
+        <ul class="feed" id="dMov"></ul>
+      </section>
+    </aside>
+  </div>
+
+  <script src="lib/supabase.js?v=2.117.3" defer></script>
+  <script src="config.js?v=20261009" defer></script>
+  <script src="admin.js?v=20261009" defer></script>
+</body>
+</html>

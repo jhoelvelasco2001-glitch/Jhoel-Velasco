@@ -9,11 +9,9 @@
     // Número de WhatsApp con código de país, solo dígitos (ej. Perú: 51987654321).
     // Mientras esté vacío, el formulario mostrará un aviso en lugar de abrir WhatsApp.
     whatsapp: '51912536501',
-    // Dirección del servidor de cuentas (backend). Mientras esté vacía, el registro
-    // se envía como solicitud por WhatsApp y el inicio de sesión muestra un aviso.
-    authApi: '',
-    // Mientras sea true, "Iniciar sesión" abre el panel de demostración (panel.html).
-    // Ponlo en false antes de lanzar si aún no hay servidor de cuentas.
+    // Las cuentas se conectan con Supabase en config.js. Mientras no esté
+    // configurado y demoPanel sea true, "Iniciar sesión" abre el panel de
+    // demostración. Ponlo en false si lanzas la web sin Supabase.
     demoPanel: true,
     baseRate: 1.0,          // % mensual objetivo base
     perReferral: 0.01,      // % adicional por referido válido
@@ -461,6 +459,20 @@
       m.appendChild(a);
     }
 
+    var J1 = window.J1 || { live: false };
+    var db = J1.db;
+    function busy(form, on) {
+      var b = form.querySelector('.auth__submit');
+      if (!b) return;
+      if (on) { b.dataset.label = b.textContent; b.textContent = 'Un momento…'; b.disabled = true; }
+      else { b.textContent = b.dataset.label || b.textContent; b.disabled = false; }
+    }
+    function goToPanel(userId) {
+      return db.from('profiles').select('role').eq('id', userId).single().then(function (r) {
+        location.href = r.data && r.data.role === 'admin' ? 'admin.html' : 'panel.html';
+      });
+    }
+
     // Iniciar sesión
     var login = document.getElementById('loginForm');
     login.addEventListener('submit', function (e) {
@@ -469,17 +481,22 @@
       var pass = document.getElementById('loginPass');
       if (!emailRe.test(email.value.trim())) return fail(login, 'Escribe un correo electrónico válido.', email);
       if (pass.value.length < 8) return fail(login, 'La contraseña tiene al menos 8 caracteres.', pass);
-      if (!CONFIG.authApi && CONFIG.demoPanel) {
+      if (db) {
+        busy(login, true);
+        db.auth.signInWithPassword({ email: email.value.trim(), password: pass.value }).then(function (r) {
+          if (r.error) { busy(login, false); return fail(login, J1.errorText(r.error)); }
+          ok(login, 'Ingresando…');
+          return goToPanel(r.data.user.id);
+        }).catch(function (err) { busy(login, false); fail(login, J1.errorText(err)); });
+        return;
+      }
+      if (CONFIG.demoPanel) {
         ok(login, 'Ingresando al panel de demostración…');
         setTimeout(function () { location.href = 'panel.html'; }, 500);
         return;
       }
-      if (!CONFIG.authApi) {
-        var m = ok(login, 'El panel de inversionistas se habilitará muy pronto. Te avisaremos por WhatsApp.');
-        appendLink(m, waLink('Hola, quiero información sobre el acceso a mi cuenta Jhoel 1%. Correo: ' + email.value.trim()), 'Escríbenos');
-        return;
-      }
-      // Cuando exista el backend: POST CONFIG.authApi + '/login'
+      var m = ok(login, 'El panel de inversionistas se habilitará muy pronto. Te avisaremos por WhatsApp.');
+      appendLink(m, waLink('Hola, quiero información sobre el acceso a mi cuenta Jhoel 1%. Correo: ' + email.value.trim()), 'Escríbenos');
     });
 
     // Registrarse
@@ -498,21 +515,43 @@
       if (!f('regAdult').checked) return fail(reg, 'Debes ser mayor de 18 años para registrarte.');
       if (!f('regTerms').checked) return fail(reg, 'Debes aceptar los Términos y Condiciones.');
 
-      if (!CONFIG.authApi) {
-        // Sin backend: se envía la solicitud por WhatsApp (nunca la contraseña).
-        var text = 'Hola, quiero crear mi cuenta en Jhoel 1%.\n' +
-          'Nombre: ' + first.value.trim() + ' ' + last.value.trim() + '\n' +
-          'Correo: ' + email.value.trim() + '\n' +
-          'País: ' + country.value + '\n' +
-          'WhatsApp: ' + phone.value.trim() +
-          (ref.value.trim() ? '\nCódigo de referido: ' + ref.value.trim() : '');
-        var url = waLink(text);
-        var win = window.open(url, '_blank', 'noopener');
-        var m = ok(reg, '¡Gracias, ' + first.value.trim() + '! Confirma tu solicitud por WhatsApp y activaremos tu cuenta tras verificar tu identidad.');
-        if (!win) appendLink(m, url, 'Enviar por WhatsApp');
+      if (db) {
+        busy(reg, true);
+        db.auth.signUp({
+          email: email.value.trim(),
+          password: pass.value,
+          options: {
+            emailRedirectTo: location.origin + location.pathname.replace(/[^/]*$/, '') + 'panel.html',
+            data: {
+              first_name: first.value.trim(), last_name: last.value.trim(),
+              phone: phone.value.trim(), country: country.value, ref_code: ref.value.trim()
+            }
+          }
+        }).then(function (r) {
+          busy(reg, false);
+          if (r.error) return fail(reg, J1.errorText(r.error));
+          if (r.data.session) { ok(reg, '¡Cuenta creada! Ingresando a tu panel…'); location.href = 'panel.html'; return; }
+          if (r.data.user && r.data.user.identities && r.data.user.identities.length === 0) {
+            return fail(reg, 'Ya existe una cuenta con este correo. Inicia sesión.');
+          }
+          var nombre = first.value.trim();
+          reg.reset();
+          ok(reg, '¡Listo, ' + nombre + '! Te enviamos un correo para confirmar tu cuenta. Revisa también la carpeta de spam.');
+        }).catch(function (err) { busy(reg, false); fail(reg, J1.errorText(err)); });
         return;
       }
-      // Cuando exista el backend: POST CONFIG.authApi + '/register'
+
+      // Sin Supabase: se envía la solicitud por WhatsApp (nunca la contraseña).
+      var text = 'Hola, quiero crear mi cuenta en Jhoel 1%.\n' +
+        'Nombre: ' + first.value.trim() + ' ' + last.value.trim() + '\n' +
+        'Correo: ' + email.value.trim() + '\n' +
+        'País: ' + country.value + '\n' +
+        'WhatsApp: ' + phone.value.trim() +
+        (ref.value.trim() ? '\nCódigo de referido: ' + ref.value.trim() : '');
+      var url = waLink(text);
+      var win = window.open(url, '_blank', 'noopener');
+      var m = ok(reg, '¡Gracias, ' + first.value.trim() + '! Confirma tu solicitud por WhatsApp y activaremos tu cuenta tras verificar tu identidad.');
+      if (!win) appendLink(m, url, 'Enviar por WhatsApp');
     });
 
     // Recuperar contraseña
@@ -521,9 +560,50 @@
       e.preventDefault();
       var email = document.getElementById('forgotEmail');
       if (!emailRe.test(email.value.trim())) return fail(forgot, 'Escribe un correo electrónico válido.', email);
+      if (db) {
+        busy(forgot, true);
+        db.auth.resetPasswordForEmail(email.value.trim(), {
+          redirectTo: location.origin + location.pathname.replace(/[^/]*$/, '') + 'reset.html'
+        }).then(function (r) {
+          busy(forgot, false);
+          if (r.error) return fail(forgot, J1.errorText(r.error));
+          ok(forgot, 'Si el correo está registrado, recibirás las instrucciones en unos minutos.');
+        });
+        return;
+      }
       var m = ok(forgot, 'Si el correo está registrado, recibirás las instrucciones en unos minutos.');
-      if (!CONFIG.authApi) appendLink(m, waLink('Hola, necesito recuperar el acceso a mi cuenta Jhoel 1%. Correo: ' + email.value.trim()), 'O escríbenos por WhatsApp');
+      appendLink(m, waLink('Hola, necesito recuperar el acceso a mi cuenta Jhoel 1%. Correo: ' + email.value.trim()), 'O escríbenos por WhatsApp');
     });
+
+    // Enlace de invitación: ?ref=CODIGO rellena el código y abre el registro
+    var refParam = (location.search.match(/[?&]ref=([^&]+)/) || [])[1];
+    if (refParam) {
+      document.getElementById('regRef').value = decodeURIComponent(refParam).toUpperCase().slice(0, 20);
+      open('register');
+    } else if (location.hash === '#login') {
+      open('login');
+    }
+
+    // Con sesión iniciada, los botones de acceso llevan directo al panel
+    if (db) {
+      db.auth.getSession().then(function (r) {
+        var s = r.data && r.data.session;
+        if (!s) return;
+        db.from('profiles').select('role').eq('id', s.user.id).single().then(function (p) {
+          var href = p.data && p.data.role === 'admin' ? 'admin.html' : 'panel.html';
+          function toLink(el, text) {
+            if (!el) return;
+            var a = document.createElement('a');
+            a.href = href; a.className = el.className; a.textContent = text;
+            el.replaceWith(a);
+          }
+          toLink(document.querySelector('.nav__actions [data-auth="login"]'), 'Mi panel');
+          toLink(document.querySelector('.nav__mobile-cta'), 'Ir a mi panel');
+          var regBtn = document.querySelector('.nav__register');
+          if (regBtn) regBtn.remove();
+        });
+      });
+    }
   }
 
   function initYear() {

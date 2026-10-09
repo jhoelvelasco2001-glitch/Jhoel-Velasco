@@ -1,17 +1,20 @@
 /* Jhoel 1% — Panel del inversionista (IIFE, sin módulos)
-   Mientras no exista un servidor de cuentas, el panel funciona en modo
-   demostración con datos de ejemplo generados a partir de la fecha de hoy. */
+   Con Supabase configurado en config.js muestra los datos reales del usuario.
+   Sin configurar, funciona en modo demostración con datos de ejemplo. */
 (function () {
   'use strict';
 
+  var J1 = window.J1 || { live: false, config: {} };
+  var db = J1.db;
+  var LIVE = !!db;
+
   var CONFIG = {
-    whatsapp: '51912536501',
-    siteUrl: 'https://jhoel1.com',
+    whatsapp: (J1.config && J1.config.whatsapp) || '51912536501',
+    siteUrl: (J1.config && J1.config.siteUrl) || 'https://jhoel1.com',
     baseRate: 1.0,
     perReferral: 0.01,
     maxBonus: 1.0,
     promoRate: 2.0,
-    promoMonths: 3,
     minWithdraw: 10
   };
 
@@ -19,12 +22,13 @@
   function safe(fn, name) { try { fn(); } catch (e) { if (window.console) console.warn('[panel] ' + name + ':', e); } }
   function $(id) { return document.getElementById(id); }
   var usd = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  function money(n) { return (n < 0 ? '-' : '') + 'US$' + usd.format(Math.abs(n)); }
+  function money(n) { n = Number(n) || 0; return (n < 0 ? '-' : '') + 'US$' + usd.format(Math.abs(n)); }
   function fmtDate(d, withYear) {
     var o = { day: 'numeric', month: 'short' };
     if (withYear !== false) o.year = 'numeric';
     return d.toLocaleDateString('es-PE', o).replace(/\./g, '');
   }
+  function parseDate(s) { if (!s) return null; if (s instanceof Date) return s; var d = new Date(s.length === 10 ? s + 'T12:00:00' : s); return d; }
   function addMonths(d, n) { var x = new Date(d); x.setMonth(x.getMonth() + n); return x; }
   function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
   function dayDiff(a, b) { return Math.round((b - a) / 86400000); }
@@ -33,90 +37,173 @@
     var t = el('div', 'toast', text);
     t.setAttribute('role', 'status');
     document.body.appendChild(t);
-    setTimeout(function () { t.classList.add('is-out'); }, 3200);
-    setTimeout(function () { t.remove(); }, 3700);
+    setTimeout(function () { t.classList.add('is-out'); }, 3600);
+    setTimeout(function () { t.remove(); }, 4100);
   }
+  function errText(e) { return J1.errorText ? J1.errorText(e) : (e && e.message) || 'Ocurrió un error.'; }
   var store = {
     get: function (k, def) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } },
     set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ } }
   };
+  function waLink(text) { return 'https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(text); }
 
-  /* ---------- Datos de ejemplo ---------- */
   var today = new Date(); today.setHours(12, 0, 0, 0);
-  var cycleStart = addMonths(addDays(today, -24), 0);
-  var start = addMonths(cycleStart, -2);
-
-  var DEMO = {
-    user: {
-      first: 'Ana', last: 'Torres Quispe', email: 'ana.torres@ejemplo.com',
-      phone: '+51 9•• ••• 123', country: 'Perú', doc: 'DNI •••• 5678'
-    },
-    capital: 5000,
-    start: start,
-    refCode: 'JHOEL-ANA27',
-    referrals: [
-      ['Carlos M.', 61, 'ok'], ['Lucía R.', 58, 'ok'], ['Jorge P.', 55, 'ok'], ['María F.', 51, 'ok'],
-      ['Diego S.', 47, 'ok'], ['Valeria C.', 40, 'ok'], ['Andrés L.', 36, 'ok'], ['Rosa Q.', 30, 'ok'],
-      ['Miguel A.', 22, 'ok'], ['Camila V.', 15, 'ok'], ['Luis H.', 9, 'ok'], ['Sofía G.', 6, 'ok'],
-      ['Renzo T.', 3, 'pending'], ['Paola D.', 1, 'pending']
-    ],
-    kyc: [
-      ['Documento de identidad', 'DNI verificado', true],
-      ['Selfie con documento', 'Verificada', true],
-      ['Comprobante de domicilio', 'Recibo de luz, agua o banco con menos de 3 meses', false]
-    ]
+  var KYC_STEPS = [
+    ['id', 'Documento de identidad', 'Foto clara de tu DNI, cédula o pasaporte'],
+    ['selfie', 'Selfie con documento', 'Tu rostro junto a tu documento'],
+    ['address', 'Comprobante de domicilio', 'Recibo de luz, agua o banco con menos de 3 meses']
+  ];
+  var REQ_STATUS = {
+    pending: ['En proceso', 'warn'], approved: ['Aprobado', 'blue'],
+    paid: ['Pagado', 'ok'], rejected: ['Rechazado', 'bad']
   };
 
-  var validRefs = DEMO.referrals.filter(function (r) { return r[2] === 'ok'; }).length;
-  var pendingRefs = DEMO.referrals.length - validRefs;
-  var bonus = Math.min(validRefs * CONFIG.perReferral, CONFIG.maxBonus);
-  var regularRate = CONFIG.baseRate + bonus;
-  var promoEnd = addMonths(start, CONFIG.promoMonths);
+  /* ======================================================================
+     DATOS
+     S = estado que dibujan todas las vistas
+     ====================================================================== */
+  var S = null;
 
-  function rateForPeriod(i) { return i <= CONFIG.promoMonths ? Math.max(CONFIG.promoRate, regularRate) : regularRate; }
-
-  // Periodos: 1 y 2 acreditados, 3 en curso.
-  var periods = [];
-  for (var i = 1; i <= 7; i++) {
-    var from = addMonths(start, i - 1), to = addMonths(start, i);
-    var rate = rateForPeriod(i);
-    var full = DEMO.capital * rate / 100;
-    var state = to <= today ? 'paid' : (from <= today ? 'now' : 'proj');
-    var total = dayDiff(from, to), elapsed = Math.max(0, Math.min(total, dayDiff(from, today)));
-    periods.push({ i: i, from: from, to: to, rate: rate, full: full, state: state, total: total, elapsed: elapsed, accrued: state === 'now' ? full * elapsed / total : 0 });
-  }
-  var current = periods.filter(function (p) { return p.state === 'now'; })[0];
-
+  /* ---------- Modo demostración ---------- */
   var REQ_KEY = 'j1_demo_requests';
-  function requests() { return store.get(REQ_KEY, []); }
-
-  function movements() {
-    var list = [{ date: start, kind: 'deposit', title: 'Depósito inicial', detail: 'Transferencia bancaria', amount: DEMO.capital, status: ['Completado', 'ok'] }];
-    periods.forEach(function (p) {
-      if (p.state !== 'paid') return;
-      list.push({ date: p.to, kind: 'profit', title: 'Rentabilidad mensual', detail: p.rate.toFixed(2) + '% sobre ' + money(DEMO.capital), amount: p.full, status: ['Acreditado', 'ok'] });
+  function demoState() {
+    var cycleStart = addDays(today, -24);
+    var start = addMonths(cycleStart, -2);
+    var refs = [
+      ['Carlos M.', 61, true], ['Lucía R.', 58, true], ['Jorge P.', 55, true], ['María F.', 51, true],
+      ['Diego S.', 47, true], ['Valeria C.', 40, true], ['Andrés L.', 36, true], ['Rosa Q.', 30, true],
+      ['Miguel A.', 22, true], ['Camila V.', 15, true], ['Luis H.', 9, true], ['Sofía G.', 6, true],
+      ['Renzo T.', 3, false], ['Paola D.', 1, false]
+    ];
+    var capital = 5000;
+    var p1 = addMonths(start, 1), p2 = addMonths(start, 2);
+    var ledger = [
+      { date: start, kind: 'deposit', amount: capital, detail: 'Transferencia bancaria' },
+      { date: p1, kind: 'profit', amount: 100, rate: 2, detail: 'Rentabilidad 2.00% sobre US$5,000.00', periodEnd: p1 },
+      { date: addDays(p1, 2), kind: 'withdraw', amount: -100, detail: 'Retiro de ganancias · Transferencia bancaria' },
+      { date: p2, kind: 'profit', amount: 100, rate: 2, detail: 'Rentabilidad 2.00% sobre US$5,000.00', periodEnd: p2 }
+    ];
+    var requests = [{ date: addDays(p1, 2), type: 'profit', amount: 100, profit: 100, method: 'Transferencia bancaria', status: 'paid' }];
+    store.get(REQ_KEY, []).forEach(function (r) {
+      requests.push({ date: new Date(r.date), type: r.type, amount: r.amount, profit: r.profit != null ? r.profit : r.amount, method: r.method, status: 'pending' });
     });
-    var firstPaid = periods[0];
-    if (firstPaid.state === 'paid') {
-      list.push({ date: addDays(firstPaid.to, 2), kind: 'withdraw', title: 'Retiro de ganancias', detail: 'Transferencia bancaria', amount: -firstPaid.full, status: ['Procesado', 'ok'] });
+    var closing = requests.some(function (r) { return r.type === 'total' && r.status === 'pending'; });
+    return {
+      user: { first: 'Ana', last: 'Torres Quispe', email: 'ana.torres@ejemplo.com', phone: '+51 9•• ••• 123',
+              country: 'Perú', doc: 'DNI •••• 5678', role: 'investor', kyc: 'in_review', refCode: 'JHOEL-ANA27', createdAt: start },
+      inv: { capital: capital, start: start, promoUntil: addMonths(start, 3), status: closing ? 'closing' : 'active' },
+      referrals: refs.map(function (r) { return { name: r[0], date: addDays(today, -r[1]), valid: r[2] }; }),
+      kycDocs: { id: { status: 'approved' }, selfie: { status: 'approved' }, address: null },
+      ledger: ledger,
+      requests: requests
+    };
+  }
+
+  /* ---------- Datos reales (Supabase) ---------- */
+  function liveState() {
+    return db.auth.getSession().then(function (r) {
+      var session = r.data && r.data.session;
+      if (!session) { location.replace('index.html#login'); throw new Error('sin sesión'); }
+      var uid = session.user.id;
+      return Promise.all([
+        db.from('profiles').select('*').eq('id', uid).single(),
+        db.from('investments').select('*').eq('user_id', uid).in('status', ['active', 'closing']).maybeSingle(),
+        db.from('movements').select('*').eq('user_id', uid).order('created_at', { ascending: true }),
+        db.from('withdrawal_requests').select('*').eq('user_id', uid).order('created_at', { ascending: true }),
+        db.rpc('my_referrals'),
+        db.from('kyc_docs').select('*').eq('user_id', uid).order('created_at', { ascending: true })
+      ]).then(function (res) {
+        for (var i = 0; i < res.length; i++) if (res[i].error) throw res[i].error;
+        var p = res[0].data, inv = res[1].data;
+        var kycDocs = { id: null, selfie: null, address: null };
+        res[5].data.forEach(function (d) { kycDocs[d.kind] = { status: d.status, note: d.note }; });
+        return {
+          uid: uid,
+          user: { first: p.first_name || 'Inversionista', last: p.last_name || '', email: p.email, phone: p.phone || '—',
+                  country: p.country || '—', doc: p.doc_number || '—', role: p.role, kyc: p.kyc_status,
+                  refCode: p.ref_code, createdAt: parseDate(p.created_at) },
+          inv: inv ? { capital: Number(inv.capital), start: parseDate(inv.start_date), promoUntil: parseDate(inv.promo_until), status: inv.status } : null,
+          referrals: res[4].data.map(function (x) { return { name: x.name, date: parseDate(x.created_at), valid: x.is_valid }; }),
+          kycDocs: kycDocs,
+          ledger: res[2].data.map(function (m) {
+            return { date: parseDate(m.created_at), kind: m.kind, amount: Number(m.amount), rate: m.rate != null ? Number(m.rate) : null,
+                     detail: m.detail || '', periodEnd: parseDate(m.period_end) };
+          }),
+          requests: res[3].data.map(function (w) {
+            return { date: parseDate(w.created_at), type: w.type, amount: Number(w.amount), profit: Number(w.profit_part),
+                     method: w.method, status: w.status, note: w.admin_note };
+          })
+        };
+      });
+    });
+  }
+
+  /* ---------- Cálculos comunes ---------- */
+  function derive(s) {
+    s.validRefs = s.referrals.filter(function (r) { return r.valid; }).length;
+    s.pendingRefs = s.referrals.length - s.validRefs;
+    s.bonus = Math.min(s.validRefs * CONFIG.perReferral, CONFIG.maxBonus);
+    s.regularRate = CONFIG.baseRate + s.bonus;
+    s.profitsTotal = s.ledger.filter(function (m) { return m.kind === 'profit'; }).reduce(function (a, m) { return a + m.amount; }, 0);
+    var reserved = s.requests.filter(function (r) { return r.status !== 'rejected'; }).reduce(function (a, r) { return a + r.profit; }, 0);
+    s.available = Math.max(0, Math.round((s.profitsTotal - reserved) * 100) / 100);
+    s.closing = !!(s.inv && s.inv.status === 'closing');
+
+    // Periodos mensuales desde el inicio de la inversión
+    s.periods = []; s.current = null;
+    if (s.inv) {
+      var paid = s.ledger.filter(function (m) { return m.kind === 'profit'; });
+      var promoUntil = s.inv.promoUntil;
+      for (var i = 1; i <= Math.max(7, paid.length + 4); i++) {
+        var from = addMonths(s.inv.start, i - 1), to = addMonths(s.inv.start, i);
+        var target = promoUntil && to <= promoUntil ? Math.max(CONFIG.promoRate, s.regularRate) : s.regularRate;
+        var p = { i: i, from: from, to: to, total: dayDiff(from, to) };
+        if (i <= paid.length) {
+          p.state = 'paid'; p.full = paid[i - 1].amount; p.rate = paid[i - 1].rate || target;
+        } else if (!s.current && from <= today) {
+          p.state = 'now'; p.rate = target; p.full = s.inv.capital * target / 100;
+          p.elapsed = Math.max(0, Math.min(p.total, dayDiff(from, today)));
+          p.accrued = p.full * p.elapsed / p.total;
+          s.current = p;
+        } else {
+          p.state = 'proj'; p.rate = target; p.full = s.inv.capital * target / 100;
+        }
+        s.periods.push(p);
+      }
+      // Mostrar como máximo los últimos 3 pagados y lo que viene
+      var firstShown = Math.max(0, paid.length - 3);
+      s.periods = s.periods.slice(firstShown, firstShown + 7);
     }
-    requests().forEach(function (r) {
-      list.push({ date: new Date(r.date), kind: 'withdraw', title: r.type === 'total' ? 'Retiro total del capital' : 'Retiro de ganancias', detail: r.method, amount: -r.amount, status: ['En proceso', 'warn'] });
+
+    // Movimientos para mostrar: libro + solicitudes de retiro aún no pagadas
+    var titles = { deposit: 'Depósito', profit: 'Rentabilidad mensual', withdraw: 'Retiro de ganancias', capital_return: 'Devolución de capital' };
+    var labels = { deposit: ['Completado', 'ok'], profit: ['Acreditado', 'ok'], withdraw: ['Pagado', 'ok'], capital_return: ['Pagado', 'ok'] };
+    s.movements = s.ledger.map(function (m) {
+      return { date: m.date, kind: m.kind, title: titles[m.kind] || m.kind, detail: m.detail, amount: m.amount, status: labels[m.kind] || ['—', 'blue'] };
     });
-    return list.sort(function (a, b) { return b.date - a.date; });
+    s.requests.forEach(function (r) {
+      if (r.status === 'paid') return;
+      s.movements.push({
+        date: r.date, kind: 'withdraw', title: r.type === 'total' ? 'Retiro total del capital' : 'Retiro de ganancias',
+        detail: r.method, amount: -r.amount, status: REQ_STATUS[r.status] || ['—', 'blue'], muted: r.status === 'rejected'
+      });
+    });
+    s.movements.sort(function (a, b) { return b.date - a.date; });
+    s.history = s.requests.slice().sort(function (a, b) { return b.date - a.date; }).map(function (r) {
+      return { date: r.date, kind: 'withdraw', title: r.type === 'total' ? 'Retiro total del capital' : 'Retiro de ganancias',
+               detail: r.method + (r.note ? ' · ' + r.note : ''), amount: -r.amount, status: REQ_STATUS[r.status] || ['—', 'blue'] };
+    });
+    return s;
   }
 
-  function available() {
-    var profits = 0, out = 0;
-    movements().forEach(function (m) {
-      if (m.kind === 'profit') profits += m.amount;
-      if (m.kind === 'withdraw') out += -m.amount;
-    });
-    return Math.max(0, Math.round((profits - out) * 100) / 100);
+  function load() {
+    var p = LIVE ? liveState() : Promise.resolve(demoState());
+    return p.then(function (s) { S = derive(s); render(); });
   }
-  function isClosed() { return requests().some(function (r) { return r.type === 'total'; }); }
 
-  /* ---------- Navegación ---------- */
+  /* ======================================================================
+     VISTAS
+     ====================================================================== */
   var VIEWS = ['resumen', 'movimientos', 'retiros', 'referidos', 'perfil'];
   function showView(name) {
     if (VIEWS.indexOf(name) < 0) name = 'resumen';
@@ -139,62 +226,86 @@
     showView(location.hash.slice(1));
   }
 
-  /* ---------- Resumen ---------- */
-  function renderSummary() {
-    var u = DEMO.user;
-    $('userFirst').textContent = u.first;
-    $('avatar').textContent = (u.first[0] + u.last[0]).toUpperCase();
+  function render() {
+    safe(renderHeader, 'cabecera');
+    safe(renderSummary, 'resumen');
+    safe(renderMovements, 'movimientos');
+    safe(renderWithdrawals, 'retiros');
+    safe(renderReferrals, 'referidos');
+    safe(renderProfile, 'perfil');
+  }
+
+  function renderHeader() {
+    var u = S.user;
+    $('demoBar').hidden = LIVE;
+    $('userFirst').textContent = u.first.split(' ')[0];
+    $('avatar').textContent = ((u.first[0] || '') + (u.last[0] || '')).toUpperCase() || 'J1';
     var d = today.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     $('today').textContent = d.charAt(0).toUpperCase() + d.slice(1);
+    $('adminLink').hidden = u.role !== 'admin';
+    var name = (u.first + ' ' + u.last).trim();
+    var deposit = waLink('Hola, soy ' + name + ' (' + u.email + '). Quiero ' + (S.inv ? 'agregar capital a' : 'hacer el depósito de') + ' mi inversión en Jhoel 1%.');
+    $('addCapital').href = deposit;
+    $('depositWa').href = deposit;
+  }
 
-    var avail = available();
-    var accrued = current ? current.accrued : 0;
-    var closed = isClosed();
+  function renderSummary() {
+    var hasInv = !!S.inv;
+    $('welcome').hidden = hasInv;
+    $('perfGrid').hidden = !hasInv;
+    $('stepKyc').classList.toggle('is-done', S.user.kyc === 'verified');
 
-    $('kBalance').textContent = money(DEMO.capital + avail + accrued);
-    $('kCapital').textContent = money(DEMO.capital);
-    $('kSince').textContent = fmtDate(start);
-    $('kAvailable').textContent = money(avail);
-    var nowRate = current ? current.rate : regularRate;
+    var capital = hasInv ? S.inv.capital : 0;
+    var accrued = S.current ? S.current.accrued : 0;
+    $('kBalance').textContent = money(capital + S.available + accrued);
+    $('kCapital').textContent = money(capital);
+    $('kSince').textContent = hasInv ? fmtDate(S.inv.start) : '—';
+    $('kAvailable').textContent = money(S.available);
+    var promoActive = hasInv && S.inv.promoUntil && today < S.inv.promoUntil;
+    var nowRate = S.current ? S.current.rate : S.regularRate;
     $('kRate').textContent = nowRate.toFixed(2) + '%';
-    $('kRateMeta').textContent = today < promoEnd
-      ? 'Promoción activa · luego ' + regularRate.toFixed(2) + '%'
-      : 'Base 1% + ' + bonus.toFixed(2) + '% por ' + validRefs + ' referidos';
+    $('kRateMeta').textContent = promoActive
+      ? 'Promoción activa · luego ' + S.regularRate.toFixed(2) + '%'
+      : 'Base 1% + ' + S.bonus.toFixed(2) + '% por ' + S.validRefs + ' referidos';
 
-    var promo = $('promoBanner');
-    promo.hidden = !(today < promoEnd) || closed;
-    $('promoEnd').textContent = fmtDate(promoEnd);
-    $('promoNext').textContent = regularRate.toFixed(2) + '%';
-
-    if (current) {
-      $('cycleRange').textContent = fmtDate(current.from, false) + ' – ' + fmtDate(current.to);
-      $('cycleDays').textContent = current.elapsed;
-      $('cycleTotal').textContent = current.total;
-      $('ring').style.setProperty('--p', Math.round(current.elapsed / current.total * 100));
-      $('cycleAccrued').textContent = money(current.accrued);
-      $('cycleNext').textContent = fmtDate(current.to);
-      $('cycleEst').textContent = money(current.full);
+    $('promoBanner').hidden = !promoActive || S.closing;
+    if (promoActive) {
+      $('promoEnd').textContent = fmtDate(S.inv.promoUntil);
+      $('promoNext').textContent = S.regularRate.toFixed(2) + '%';
     }
 
-    $('lvlRefs').textContent = validRefs;
-    $('lvlBar').style.width = Math.min(validRefs, 100) + '%';
-    var left = Math.max(0, 100 - validRefs);
+    var c = S.current;
+    if (c) {
+      $('cycleRange').textContent = fmtDate(c.from, false) + ' – ' + fmtDate(c.to);
+      $('cycleDays').textContent = c.elapsed;
+      $('cycleTotal').textContent = c.total;
+      $('ring').style.setProperty('--p', Math.round(c.elapsed / c.total * 100));
+      $('cycleAccrued').textContent = money(c.accrued);
+      $('cycleNext').textContent = c.to <= today ? 'Pendiente de acreditar' : fmtDate(c.to);
+      $('cycleEst').textContent = money(c.full);
+    }
+
+    $('lvlRefs').textContent = S.validRefs;
+    $('lvlBar').style.width = Math.min(S.validRefs, 100) + '%';
+    var left = Math.max(0, 100 - S.validRefs);
     $('lvlTip').textContent = left ? 'Te faltan ' + left + ' referidos para llegar a 2.00% mensual.' : 'Alcanzaste el bono máximo de +1%.';
 
-    renderFeed($('feedRecent'), movements().slice(0, 4));
-    renderChart();
+    renderFeed($('feedRecent'), S.movements.slice(0, 4));
+    if (hasInv) renderChart();
   }
 
   function renderFeed(ul, items) {
     ul.innerHTML = '';
     if (!items.length) { ul.appendChild(el('li', 'empty', 'Aún no hay movimientos.')); return; }
-    var icons = { deposit: '↓', profit: '%', withdraw: '↑' };
+    var icons = { deposit: '↓', profit: '%', withdraw: '↑', capital_return: '↑' };
     items.forEach(function (m) {
       var li = el('li');
-      li.appendChild(el('span', 'feed__ico feed__ico--' + m.kind, icons[m.kind]));
+      if (m.muted) li.style.opacity = '.6';
+      var kindCls = m.kind === 'capital_return' ? 'withdraw' : m.kind;
+      li.appendChild(el('span', 'feed__ico feed__ico--' + kindCls, icons[m.kind] || '•'));
       var t = el('div', 'feed__txt');
       t.appendChild(el('strong', null, m.title));
-      t.appendChild(el('span', null, fmtDate(m.date) + ' · ' + m.detail));
+      t.appendChild(el('span', null, fmtDate(m.date) + (m.detail ? ' · ' + m.detail : '')));
       li.appendChild(t);
       var a = el('div', 'feed__amt' + (m.amount > 0 ? ' pos' : ''), (m.amount > 0 ? '+' : '') + money(m.amount));
       var pill = el('small', null);
@@ -207,9 +318,12 @@
 
   function renderChart() {
     var box = $('chart');
+    var periods = S.periods;
+    if (!periods.length) { box.innerHTML = ''; return; }
     var W = 640, H = 230, padL = 44, padB = 28, padT = 22, padR = 8;
-    var max = Math.max.apply(null, periods.map(function (p) { return p.full; }));
-    var top = Math.ceil(max / 25) * 25;
+    var max = Math.max.apply(null, periods.map(function (p) { return p.full; }).concat([1]));
+    var step = max > 400 ? 100 : max > 100 ? 50 : max > 40 ? 25 : 10;
+    var top = Math.ceil(max / step) * step;
     var ns = 'http://www.w3.org/2000/svg';
     var svg = document.createElementNS(ns, 'svg');
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
@@ -228,6 +342,7 @@
 
     var plotH = H - padB - padT, plotW = W - padL - padR;
     var y = function (v) { return padT + plotH - v / top * plotH; };
+    var hgt = function (v) { return Math.max(0, plotH - (y(v) - padT)); };
     var grid = n('g', { 'class': 'grid' }), axis = n('g', { 'class': 'axis' });
     for (var t = 0; t <= 4; t++) {
       var v = top * t / 4, yy = y(v);
@@ -239,14 +354,14 @@
     var slot = plotW / periods.length, bw = Math.min(46, slot * .56);
     periods.forEach(function (p, idx) {
       var x = padL + slot * idx + (slot - bw) / 2;
-      var label = fmtDate(p.to, false).split(' ')[1];
+      var label = fmtDate(p.to, false).split(' ')[1] || '';
       axis.appendChild(n('text', { x: x + bw / 2, y: H - 8, 'text-anchor': 'middle' }, label.charAt(0).toUpperCase() + label.slice(1)));
       if (p.state === 'now') {
-        svg.appendChild(n('rect', { x: x, y: y(p.full), width: bw, height: plotH - (y(p.full) - padT), rx: 5, 'class': 'bar-proj' }));
-        svg.appendChild(n('rect', { x: x, y: y(p.accrued), width: bw, height: plotH - (y(p.accrued) - padT), rx: 5, 'class': 'bar-now' }));
+        svg.appendChild(n('rect', { x: x, y: y(p.full), width: bw, height: hgt(p.full), rx: 5, 'class': 'bar-proj' }));
+        svg.appendChild(n('rect', { x: x, y: y(p.accrued), width: bw, height: hgt(p.accrued), rx: 5, 'class': 'bar-now' }));
         svg.appendChild(n('text', { x: x + bw / 2, y: y(p.full) - 7, 'text-anchor': 'middle', 'class': 'val' }, '$' + Math.round(p.accrued)));
       } else {
-        svg.appendChild(n('rect', { x: x, y: y(p.full), width: bw, height: plotH - (y(p.full) - padT), rx: 5, 'class': p.state === 'paid' ? 'bar-paid' : 'bar-proj' }));
+        svg.appendChild(n('rect', { x: x, y: y(p.full), width: bw, height: hgt(p.full), rx: 5, 'class': p.state === 'paid' ? 'bar-paid' : 'bar-proj' }));
         svg.appendChild(n('text', { x: x + bw / 2, y: y(p.full) - 7, 'text-anchor': 'middle', 'class': 'val' }, '$' + Math.round(p.full)));
       }
     });
@@ -260,15 +375,20 @@
   function renderMovements() {
     var body = $('movBody');
     body.innerHTML = '';
-    var list = movements().filter(function (m) { return movFilter === 'all' || m.kind === movFilter; });
+    var list = S.movements.filter(function (m) {
+      if (movFilter === 'all') return true;
+      if (movFilter === 'withdraw') return m.kind === 'withdraw' || m.kind === 'capital_return';
+      return m.kind === movFilter;
+    });
     if (!list.length) {
       var tr = el('tr'); var td = el('td', 'muted', 'No hay movimientos de este tipo.'); td.colSpan = 5; tr.appendChild(td); body.appendChild(tr); return;
     }
     list.forEach(function (m) {
       var tr = el('tr');
+      if (m.muted) tr.style.opacity = '.6';
       tr.appendChild(el('td', 'muted', fmtDate(m.date)));
       tr.appendChild(el('td', null, m.title));
-      tr.appendChild(el('td', 'muted', m.detail));
+      tr.appendChild(el('td', 'muted', m.detail || '—'));
       tr.appendChild(el('td', 'num' + (m.amount > 0 ? ' pos' : ''), (m.amount > 0 ? '+' : '') + money(m.amount)));
       var st = el('td'); st.appendChild(el('span', 'pill pill--' + m.status[1], m.status[0])); tr.appendChild(st);
       body.appendChild(tr);
@@ -286,76 +406,103 @@
 
   /* ---------- Retiros ---------- */
   function renderWithdrawals() {
-    var avail = available();
-    var closed = isClosed();
-    $('wAvail').textContent = money(avail);
-    $('cCapital').textContent = money(closed ? 0 : DEMO.capital);
-    $('cAvail').textContent = money(avail);
-    $('cTotal').textContent = money((closed ? 0 : DEMO.capital) + avail);
+    var capital = S.inv ? S.inv.capital : 0;
+    $('wAvail').textContent = money(S.available);
+    $('cCapital').textContent = money(S.closing ? 0 : capital);
+    $('cAvail').textContent = money(S.available);
+    $('cTotal').textContent = money((S.closing ? 0 : capital) + S.available);
     $('cConfirmTotal').textContent = $('cTotal').textContent;
-    $('closeStart').disabled = closed;
-    $('wForm').querySelector('button[type="submit"]').disabled = closed || avail < CONFIG.minWithdraw;
-    if (closed) $('cMsg').textContent = 'Tu solicitud de retiro total está en proceso. Recibirás tu capital en hasta 7 días hábiles desde la aprobación.';
+    $('closeStart').disabled = S.closing || !S.inv;
+    $('wForm').querySelector('button[type="submit"]').disabled = S.closing || S.available < CONFIG.minWithdraw;
+    var cMsg = $('cMsg');
+    cMsg.classList.remove('is-error');
+    cMsg.textContent = S.closing ? 'Tu solicitud de retiro total está en proceso. Recibirás tu capital en hasta 7 días hábiles desde la aprobación.' : '';
+    if (LIVE && S.user.kyc !== 'verified' && S.inv) {
+      $('wMsg').classList.remove('is-error');
+      $('wMsg').textContent = 'Para retirar necesitas completar tu verificación de identidad en Mi perfil.';
+    }
+    renderFeed($('wHistory'), S.history);
+  }
 
-    var hist = movements().filter(function (m) { return m.kind === 'withdraw'; });
-    renderFeed($('wHistory'), hist);
+  function setMsg(m, text, bad) { m.textContent = text; m.classList.toggle('is-error', !!bad); }
+
+  function requestWithdrawal(type, amount, method, account) {
+    if (!LIVE) {
+      var list = store.get(REQ_KEY, []);
+      var profit = type === 'total' ? S.available : amount;
+      list.push({ date: new Date().toISOString(), amount: type === 'total' ? S.inv.capital + S.available : amount, profit: profit, method: method, type: type });
+      store.set(REQ_KEY, list);
+      return Promise.resolve();
+    }
+    return db.rpc('request_withdrawal', { p_type: type, p_amount: amount, p_method: method, p_account: account })
+      .then(function (r) { if (r.error) throw r.error; });
   }
 
   function initWithdraw() {
     var form = $('wForm'), amount = $('wAmount'), msg = $('wMsg');
-    $('wMax').addEventListener('click', function () { amount.value = available().toFixed(2); amount.classList.remove('is-invalid'); });
+    $('wMax').addEventListener('click', function () { amount.value = S.available.toFixed(2); amount.classList.remove('is-invalid'); });
     amount.addEventListener('input', function () { amount.classList.remove('is-invalid'); });
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      msg.classList.remove('is-error');
-      var v = parseFloat(amount.value), avail = available();
+      var v = Math.round(parseFloat(amount.value) * 100) / 100;
       var account = $('wAccount').value.trim();
-      if (!(v >= CONFIG.minWithdraw)) { msg.textContent = 'El monto mínimo de retiro es ' + money(CONFIG.minWithdraw) + '.'; msg.classList.add('is-error'); amount.classList.add('is-invalid'); amount.focus(); return; }
-      if (v > avail + 0.001) { msg.textContent = 'El monto supera tus ganancias disponibles (' + money(avail) + ').'; msg.classList.add('is-error'); amount.classList.add('is-invalid'); amount.focus(); return; }
-      if (account.length < 6) { msg.textContent = 'Escribe la cuenta, número o dirección donde recibirás el dinero.'; msg.classList.add('is-error'); $('wAccount').focus(); return; }
-
-      var list = requests();
-      list.push({ date: new Date().toISOString(), amount: Math.round(v * 100) / 100, method: $('wMethod').value, type: 'profit' });
-      store.set(REQ_KEY, list);
-      form.reset();
-      msg.textContent = 'Solicitud registrada por ' + money(v) + '. Se procesará en un máximo de 48 horas.';
-      refresh();
+      if (!(v >= CONFIG.minWithdraw)) { setMsg(msg, 'El monto mínimo de retiro es ' + money(CONFIG.minWithdraw) + '.', true); amount.classList.add('is-invalid'); amount.focus(); return; }
+      if (v > S.available + 0.001) { setMsg(msg, 'El monto supera tus ganancias disponibles (' + money(S.available) + ').', true); amount.classList.add('is-invalid'); amount.focus(); return; }
+      if (account.length < 6) { setMsg(msg, 'Escribe la cuenta, número o dirección donde recibirás el dinero.', true); $('wAccount').focus(); return; }
+      var btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      requestWithdrawal('profit', v, $('wMethod').value, account).then(function () {
+        form.reset();
+        return load().then(function () { setMsg(msg, 'Solicitud registrada por ' + money(v) + '. Se procesará en un máximo de 48 horas.'); });
+      }).catch(function (err) { btn.disabled = false; setMsg(msg, errText(err), true); });
     });
 
-    $('closeStart').addEventListener('click', function () { $('closeConfirm').hidden = false; $('closeYes').focus(); });
+    $('closeStart').addEventListener('click', function () {
+      if ($('wAccount').value.trim().length < 6) {
+        setMsg($('cMsg'), 'Primero escribe en "Retirar ganancias" el método y la cuenta donde recibirás tu capital.', true);
+        $('wAccount').focus();
+        return;
+      }
+      setMsg($('cMsg'), '');
+      $('closeConfirm').hidden = false; $('closeYes').focus();
+    });
     $('closeNo').addEventListener('click', function () { $('closeConfirm').hidden = true; $('closeStart').focus(); });
     $('closeYes').addEventListener('click', function () {
-      var list = requests();
-      list.push({ date: new Date().toISOString(), amount: DEMO.capital + available(), method: 'Transferencia bancaria', type: 'total' });
-      store.set(REQ_KEY, list);
-      $('closeConfirm').hidden = true;
-      refresh();
-      toast('Solicitud de retiro total registrada.');
+      $('closeYes').disabled = true;
+      requestWithdrawal('total', 0, $('wMethod').value, $('wAccount').value.trim()).then(function () {
+        $('closeConfirm').hidden = true;
+        return load().then(function () { toast('Solicitud de retiro total registrada.'); });
+      }).catch(function (err) { setMsg($('cMsg'), errText(err), true); })
+        .then(function () { $('closeYes').disabled = false; });
     });
   }
 
   /* ---------- Referidos ---------- */
   function renderReferrals() {
-    var link = CONFIG.siteUrl + '/?ref=' + DEMO.refCode;
-    $('refCode').textContent = DEMO.refCode;
+    var base = LIVE ? location.origin + location.pathname.replace(/[^/]*$/, '') : CONFIG.siteUrl + '/';
+    var link = base + '?ref=' + S.user.refCode;
+    $('refCode').textContent = S.user.refCode;
     $('refLink').value = link;
-    $('shareWa').href = 'https://wa.me/?text=' + encodeURIComponent('Te invito a invertir con Jhoel 1%. Regístrate con mi código ' + DEMO.refCode + ': ' + link);
-    $('rValid').textContent = validRefs;
-    $('rPending').textContent = pendingRefs;
-    $('rBonus').textContent = '+' + bonus.toFixed(2) + '%';
-    $('rRate').textContent = regularRate.toFixed(2) + '%';
+    $('shareWa').href = 'https://wa.me/?text=' + encodeURIComponent('Te invito a invertir con Jhoel 1%. Regístrate con mi código ' + S.user.refCode + ': ' + link);
+    $('rValid').textContent = S.validRefs;
+    $('rPending').textContent = S.pendingRefs;
+    $('rBonus').textContent = '+' + S.bonus.toFixed(2) + '%';
+    $('rRate').textContent = S.regularRate.toFixed(2) + '%';
 
     var body = $('refBody');
     body.innerHTML = '';
-    DEMO.referrals.forEach(function (r) {
+    if (!S.referrals.length) {
+      var tr0 = el('tr'); var td0 = el('td', 'muted', 'Aún no tienes referidos. Comparte tu enlace para empezar.'); td0.colSpan = 4; tr0.appendChild(td0); body.appendChild(tr0); return;
+    }
+    S.referrals.forEach(function (r) {
       var tr = el('tr');
-      tr.appendChild(el('td', null, r[0]));
-      tr.appendChild(el('td', 'muted', fmtDate(addDays(today, -r[1]))));
+      tr.appendChild(el('td', null, r.name));
+      tr.appendChild(el('td', 'muted', fmtDate(r.date)));
       var st = el('td');
-      st.appendChild(el('span', 'pill ' + (r[2] === 'ok' ? 'pill--ok' : 'pill--warn'), r[2] === 'ok' ? 'Válido' : 'En verificación'));
+      st.appendChild(el('span', 'pill ' + (r.valid ? 'pill--ok' : 'pill--warn'), r.valid ? 'Válido' : 'En verificación'));
       tr.appendChild(st);
-      tr.appendChild(el('td', 'num' + (r[2] === 'ok' ? ' pos' : ' muted'), r[2] === 'ok' ? '+0.01%' : '—'));
+      tr.appendChild(el('td', 'num' + (r.valid ? ' pos' : ' muted'), r.valid ? '+0.01%' : '—'));
       body.appendChild(tr);
     });
   }
@@ -372,8 +519,9 @@
   }
 
   /* ---------- Perfil ---------- */
+  var KYC_LABEL = { verified: 'Verificado', in_review: 'En revisión', pending: 'Pendiente', rejected: 'Rechazado' };
   function renderProfile() {
-    var u = DEMO.user;
+    var u = S.user;
     function fill(dl, rows) {
       dl.innerHTML = '';
       rows.forEach(function (r) {
@@ -381,25 +529,74 @@
       });
     }
     fill($('profileData'), [
-      ['Nombre', u.first + ' ' + u.last], ['Correo', u.email], ['WhatsApp', u.phone],
-      ['País', u.country], ['Documento', u.doc], ['Miembro desde', fmtDate(start)]
+      ['Nombre', (u.first + ' ' + u.last).trim()], ['Correo', u.email], ['WhatsApp', u.phone],
+      ['País', u.country], ['Documento', u.doc], ['Verificación', KYC_LABEL[u.kyc] || u.kyc],
+      ['Miembro desde', u.createdAt ? fmtDate(u.createdAt) : '—']
     ]);
-    fill($('planData'), [
-      ['Plan', 'Jhoel 1% · Estándar'], ['Capital invertido', money(DEMO.capital)],
-      ['Fecha de inicio', fmtDate(start)],
-      ['Tasa promocional', CONFIG.promoRate.toFixed(2) + '% hasta ' + fmtDate(promoEnd)],
-      ['Tasa regular', regularRate.toFixed(2) + '% mensual'],
-      ['Día de abono', 'Cada ' + start.getDate() + ' del mes']
-    ]);
+    if (S.inv) {
+      var rows = [
+        ['Plan', 'Jhoel 1% · Estándar'], ['Capital invertido', money(S.inv.capital)],
+        ['Fecha de inicio', fmtDate(S.inv.start)]
+      ];
+      if (S.inv.promoUntil) rows.push(['Tasa promocional', CONFIG.promoRate.toFixed(2) + '% hasta ' + fmtDate(S.inv.promoUntil)]);
+      rows.push(['Tasa regular objetivo', S.regularRate.toFixed(2) + '% mensual']);
+      rows.push(['Día de abono', 'Cada ' + S.inv.start.getDate() + ' del mes']);
+      rows.push(['Estado', S.closing ? 'En cierre' : 'Activa']);
+      fill($('planData'), rows);
+    } else {
+      fill($('planData'), [['Estado', 'Sin inversión activa'], ['Inversión mínima', 'US$100']]);
+    }
+
     var ol = $('kyc');
     ol.innerHTML = '';
-    DEMO.kyc.forEach(function (k, i) {
+    var verified = u.kyc === 'verified';
+    KYC_STEPS.forEach(function (k, i) {
+      var doc = S.kycDocs[k[0]];
+      var st = verified ? 'approved' : doc ? doc.status : 'none';
       var li = el('li');
-      li.appendChild(el('span', 'kyc__n ' + (k[2] ? 'kyc__n--ok' : 'kyc__n--todo'), k[2] ? '✓' : String(i + 1)));
-      var t = el('div'); t.appendChild(el('strong', null, k[0])); t.appendChild(el('span', null, k[1])); li.appendChild(t);
-      if (k[2]) li.appendChild(el('span', 'pill pill--ok', 'Verificado'));
-      else { var b = el('button', 'btn btn--ghost btn--sm', 'Subir'); b.type = 'button'; b.setAttribute('data-soon', ''); li.appendChild(b); }
+      li.appendChild(el('span', 'kyc__n ' + (st === 'approved' ? 'kyc__n--ok' : 'kyc__n--todo'), st === 'approved' ? '✓' : String(i + 1)));
+      var t = el('div'); t.appendChild(el('strong', null, k[1]));
+      t.appendChild(el('span', null, st === 'rejected' && doc.note ? 'Rechazado: ' + doc.note : k[2]));
+      li.appendChild(t);
+      if (st === 'approved') li.appendChild(el('span', 'pill pill--ok', 'Verificado'));
+      else if (st === 'pending') li.appendChild(el('span', 'pill pill--warn', 'En revisión'));
+      else {
+        var side = el('div', 'kyc__side');
+        if (st === 'rejected') side.appendChild(el('span', 'pill pill--bad', 'Rechazado'));
+        var b = el('button', 'btn btn--ghost btn--sm', st === 'rejected' ? 'Subir de nuevo' : 'Subir');
+        b.type = 'button'; b.setAttribute('data-kyc', k[0]);
+        side.appendChild(b);
+        li.appendChild(side);
+      }
       ol.appendChild(li);
+    });
+  }
+
+  function initKyc() {
+    var input = $('kycFile'), kind = null;
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-kyc]');
+      if (!b) return;
+      if (!LIVE) { toast('En la demostración no se suben archivos. Con la plataforma conectada podrás subir fotos o PDF.'); return; }
+      kind = b.getAttribute('data-kyc');
+      input.value = '';
+      input.click();
+    });
+    input.addEventListener('change', function () {
+      var file = input.files && input.files[0];
+      if (!file || !kind) return;
+      if (file.size > 8 * 1024 * 1024) { toast('El archivo pesa más de 8 MB. Usa una foto más liviana.'); return; }
+      var ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+      var path = S.uid + '/' + kind + '-' + Date.now() + '.' + ext;
+      toast('Subiendo documento…');
+      db.storage.from('kyc').upload(path, file, { upsert: false, contentType: file.type }).then(function (r) {
+        if (r.error) throw r.error;
+        return db.rpc('submit_kyc_doc', { p_kind: kind, p_path: path });
+      }).then(function (r) {
+        if (r && r.error) throw r.error;
+        return load();
+      }).then(function () { toast('Documento enviado. Lo revisaremos pronto.'); })
+        .catch(function (err) { toast(errText(err)); });
     });
   }
 
@@ -408,25 +605,32 @@
       var t = e.target.closest('[data-soon]');
       if (!t) return;
       if (t.type === 'checkbox') e.preventDefault();
-      toast('Esta opción se activará cuando la plataforma esté conectada.');
+      toast('Esta opción estará disponible próximamente.');
     });
   }
 
-  function refresh() {
-    safe(renderSummary, 'resumen');
-    safe(renderMovements, 'movimientos');
-    safe(renderWithdrawals, 'retiros');
+  function initLogout() {
+    $('logout').addEventListener('click', function (e) {
+      if (!LIVE) return;
+      e.preventDefault();
+      db.auth.signOut().then(function () { location.href = 'index.html'; });
+    });
   }
 
   function boot() {
     safe(initNav, 'nav');
-    refresh();
-    safe(renderReferrals, 'referidos');
-    safe(renderProfile, 'perfil');
     safe(initFilters, 'filtros');
     safe(initWithdraw, 'retiro');
     safe(initCopy, 'copiar');
+    safe(initKyc, 'kyc');
     safe(initSoon, 'pronto');
+    safe(initLogout, 'salir');
+    load().then(function () {
+      $('loading').classList.add('is-done');
+    }).catch(function (err) {
+      if (String(err && err.message) === 'sin sesión') return;
+      $('loading').querySelector('span').textContent = 'No se pudo cargar tu panel. ' + errText(err);
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

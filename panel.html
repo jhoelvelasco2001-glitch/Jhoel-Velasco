@@ -10,9 +10,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@300;400;500;600;700&display=swap">
-  <link rel="stylesheet" href="panel.css?v=20261009">
+  <link rel="stylesheet" href="panel.css?v=20261009b">
 </head>
 <body>
+
+  <div class="loading" id="loading" aria-live="polite"><img src="assets/img/logo.webp" alt="" width="72" height="72"><span>Cargando tu panel…</span></div>
 
   <div class="demo-bar" id="demoBar">
     <strong>Modo demostración</strong> · Los datos de este panel son de ejemplo. Se mostrarán los datos reales de cada inversionista cuando la plataforma esté conectada.
@@ -46,6 +48,10 @@
         <a href="#perfil" data-view="perfil">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-8 9c0-4 3.5-6 8-6s8 2 8 6"/></svg>
           <span>Mi perfil</span>
+        </a>
+        <a href="admin.html" id="adminLink" class="side__admin" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3Z"/></svg>
+          <span>Administración</span>
         </a>
       </nav>
       <div class="side__foot">
@@ -82,6 +88,17 @@
           <p>Tu cuenta recibe <strong>2% mensual</strong> hasta el <strong id="promoEnd">15 oct 2026</strong>. Después pasará a tu tasa regular de <strong id="promoNext">1.12%</strong>.</p>
         </div>
 
+        <article class="card card--glow welcome" id="welcome" hidden>
+          <h3>Bienvenido a Jhoel 1%</h3>
+          <p class="card__sub">Activa tu inversión en tres pasos.</p>
+          <ol class="steps">
+            <li id="stepKyc"><span class="steps__n">1</span><div><strong>Verifica tu identidad</strong><span>Sube tu documento, una selfie y un comprobante de domicilio en <a href="#perfil" data-view="perfil">Mi perfil</a>.</span></div></li>
+            <li><span class="steps__n">2</span><div><strong>Realiza tu depósito</strong><span>Desde US$100. Escríbenos y te enviamos los datos de pago.</span></div></li>
+            <li><span class="steps__n">3</span><div><strong>Recibe tu rentabilidad</strong><span>Registramos tu depósito y verás tu inversión aquí mismo.</span></div></li>
+          </ol>
+          <a class="btn btn--gold" id="depositWa" href="https://wa.me/51912536501" target="_blank" rel="noopener">Quiero hacer mi depósito</a>
+        </article>
+
         <div class="kpis">
           <article class="kpi kpi--hero">
             <p class="kpi__label">Saldo total</p>
@@ -105,7 +122,7 @@
           </article>
         </div>
 
-        <div class="grid-2">
+        <div class="grid-2" id="perfGrid">
           <article class="card">
             <header class="card__head">
               <div>
@@ -136,7 +153,7 @@
                 </div>
               </div>
               <dl class="cycle__list">
-                <div><dt>Acumulado del periodo</dt><dd id="cycleAccrued">US$80.00</dd></div>
+                <div><dt>Acumulado estimado</dt><dd id="cycleAccrued">US$80.00</dd></div>
                 <div><dt>Próximo abono</dt><dd id="cycleNext">15 oct 2026</dd></div>
                 <div><dt>Monto estimado</dt><dd id="cycleEst">US$100.00</dd></div>
               </dl>
@@ -342,6 +359,10 @@
     <a href="#perfil" data-view="perfil"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-8 9c0-4 3.5-6 8-6s8 2 8 6"/></svg><span>Perfil</span></a>
   </nav>
 
-  <script src="panel.js?v=20261009" defer></script>
+  <input type="file" id="kycFile" accept="image/jpeg,image/png,image/webp,application/pdf" hidden>
+
+  <script src="lib/supabase.js?v=2.117.3" defer></script>
+  <script src="config.js?v=20261009" defer></script>
+  <script src="panel.js?v=20261009b" defer></script>
 </body>
 </html>

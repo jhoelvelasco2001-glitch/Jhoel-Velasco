@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Nueva contraseña — Jhoel 1%</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Manrope:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="panel.css?v=20261009">
+</head>
+<body class="center-page">
+  <main class="card card--glow center-card">
+    <a href="index.html"><img src="assets/img/logo.webp" alt="Jhoel 1%" width="64" height="64" class="center-logo"></a>
+    <form class="form" id="resetForm" novalidate>
+      <h1>Crea una nueva contraseña</h1>
+      <p class="card__sub">Mínimo 8 caracteres, con una mayúscula y un número.</p>
+      <label for="pw1">Nueva contraseña<input type="password" id="pw1" autocomplete="new-password" required minlength="8"></label>
+      <label for="pw2">Repite la contraseña<input type="password" id="pw2" autocomplete="new-password" required minlength="8"></label>
+      <button type="submit" class="btn btn--gold">Guardar contraseña</button>
+      <p class="form__msg" id="resetMsg" role="status"></p>
+    </form>
+  </main>
+  <script src="lib/supabase.js?v=2.117.3" defer></script>
+  <script src="config.js?v=20261009" defer></script>
+  <script defer>
+  document.addEventListener('DOMContentLoaded', function () {
+    var J1 = window.J1, form = document.getElementById('resetForm'), msg = document.getElementById('resetMsg');
+    function say(t, bad) { msg.textContent = t; msg.classList.toggle('is-error', !!bad); }
+    if (!J1 || !J1.db) { say('Las cuentas todavía no están conectadas. Escríbenos por WhatsApp.', true); return; }
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var a = document.getElementById('pw1').value, b = document.getElementById('pw2').value;
+      if (a.length < 8 || !/[A-Z]/.test(a) || !/\d/.test(a)) return say('La contraseña necesita 8 caracteres, una mayúscula y un número.', true);
+      if (a !== b) return say('Las contraseñas no coinciden.', true);
+      J1.db.auth.updateUser({ password: a }).then(function (r) {
+        if (r.error) return say(J1.errorText(r.error), true);
+        say('Contraseña actualizada. Entrando a tu panel…');
+        setTimeout(function () { location.href = 'panel.html'; }, 900);
+      });
+    });
+  });
+  </script>
+</body>
+</html>
