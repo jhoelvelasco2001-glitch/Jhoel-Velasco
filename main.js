@@ -12,6 +12,9 @@
     // Dirección del servidor de cuentas (backend). Mientras esté vacía, el registro
     // se envía como solicitud por WhatsApp y el inicio de sesión muestra un aviso.
     authApi: '',
+    // Mientras sea true, "Iniciar sesión" abre el panel de demostración (panel.html).
+    // Ponlo en false antes de lanzar si aún no hay servidor de cuentas.
+    demoPanel: true,
     baseRate: 1.0,          // % mensual objetivo base
     perReferral: 0.01,      // % adicional por referido válido
     maxBonus: 1.0,          // % adicional máximo por referidos
@@ -466,6 +469,11 @@
       var pass = document.getElementById('loginPass');
       if (!emailRe.test(email.value.trim())) return fail(login, 'Escribe un correo electrónico válido.', email);
       if (pass.value.length < 8) return fail(login, 'La contraseña tiene al menos 8 caracteres.', pass);
+      if (!CONFIG.authApi && CONFIG.demoPanel) {
+        ok(login, 'Ingresando al panel de demostración…');
+        setTimeout(function () { location.href = 'panel.html'; }, 500);
+        return;
+      }
       if (!CONFIG.authApi) {
         var m = ok(login, 'El panel de inversionistas se habilitará muy pronto. Te avisaremos por WhatsApp.');
         appendLink(m, waLink('Hola, quiero información sobre el acceso a mi cuenta Jhoel 1%. Correo: ' + email.value.trim()), 'Escríbenos');
