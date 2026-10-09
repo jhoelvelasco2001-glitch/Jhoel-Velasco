@@ -9,6 +9,9 @@
     // Número de WhatsApp con código de país, solo dígitos (ej. Perú: 51987654321).
     // Mientras esté vacío, el formulario mostrará un aviso en lugar de abrir WhatsApp.
     whatsapp: '51912536501',
+    // Dirección del servidor de cuentas (backend). Mientras esté vacía, el registro
+    // se envía como solicitud por WhatsApp y el inicio de sesión muestra un aviso.
+    authApi: '',
     baseRate: 1.0,          // % mensual objetivo base
     perReferral: 0.01,      // % adicional por referido válido
     maxBonus: 1.0,          // % adicional máximo por referidos
@@ -279,6 +282,242 @@
     });
   }
 
+  /* ---------- Idiomas (Google Translate con selector propio) ---------- */
+  var LANG_KEY = 'googtrans';
+
+  function readLang() {
+    var m = document.cookie.match(/(?:^|;\s*)googtrans=\/[^/]+\/([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : 'es';
+  }
+
+  function writeLang(code) {
+    var host = location.hostname;
+    var expire = 'expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    [ '', ';domain=' + host, ';domain=.' + host.replace(/^www\./, '') ].forEach(function (d) {
+      document.cookie = LANG_KEY + '=;' + expire + ';path=/' + d;
+    });
+    if (code !== 'es') {
+      document.cookie = LANG_KEY + '=/es/' + code + ';path=/';
+      if (host.indexOf('.') > -1) document.cookie = LANG_KEY + '=/es/' + code + ';path=/;domain=.' + host.replace(/^www\./, '');
+    }
+  }
+
+  function loadTranslator(onFail) {
+    if (document.getElementById('gtScript')) return;
+    window.googleTranslateElementInit = function () {
+      /* global google */
+      new google.translate.TranslateElement({ pageLanguage: 'es', autoDisplay: false }, 'google_translate_element');
+    };
+    var s = document.createElement('script');
+    s.id = 'gtScript';
+    s.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+    s.onerror = onFail;
+    document.body.appendChild(s);
+  }
+
+  function toast(text) {
+    var t = document.createElement('div');
+    t.className = 'toast';
+    t.setAttribute('role', 'status');
+    t.textContent = text;
+    document.body.appendChild(t);
+    setTimeout(function () { t.classList.add('is-out'); }, 3800);
+    setTimeout(function () { t.remove(); }, 4400);
+  }
+
+  function initLang() {
+    var wrap = document.getElementById('lang');
+    var btn = document.getElementById('langBtn');
+    var menu = document.getElementById('langMenu');
+    var code = document.getElementById('langCode');
+    if (!wrap || !btn || !menu) return;
+
+    var current = readLang();
+    var label = current.split('-')[0].toUpperCase();
+    code.textContent = label;
+    [].slice.call(menu.querySelectorAll('[data-lang]')).forEach(function (b) {
+      b.setAttribute('aria-selected', b.getAttribute('data-lang') === current ? 'true' : 'false');
+    });
+    var fail = function () { toast('No se pudo cargar el traductor. Revisa tu conexión e inténtalo de nuevo.'); };
+    if (current !== 'es') loadTranslator(fail);
+
+    function close() { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var open = menu.hidden;
+      menu.hidden = !open;
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) { var sel = menu.querySelector('[aria-selected="true"]') || menu.querySelector('button'); sel.focus(); }
+    });
+    document.addEventListener('click', function (e) { if (!wrap.contains(e.target)) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !menu.hidden) { close(); btn.focus(); } });
+
+    menu.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-lang]');
+      if (!b) return;
+      var lang = b.getAttribute('data-lang');
+      close();
+      if (lang === current) return;
+      writeLang(lang);
+      location.reload();
+    });
+  }
+
+  /* ---------- Acceso: iniciar sesión / registrarse ---------- */
+  function initAuth() {
+    var modal = document.getElementById('auth');
+    if (!modal) return;
+    var forms = [].slice.call(modal.querySelectorAll('.auth__form'));
+    var lastFocus = null;
+
+    function show(view) {
+      forms.forEach(function (f) {
+        f.hidden = f.getAttribute('data-view') !== view;
+        var m = f.querySelector('.auth__msg');
+        if (m) { m.textContent = ''; m.classList.remove('is-error'); }
+      });
+      var active = modal.querySelector('.auth__form:not([hidden]) input');
+      if (active) setTimeout(function () { active.focus(); }, 60);
+    }
+    function open(view) {
+      lastFocus = document.activeElement;
+      modal.hidden = false;
+      document.body.classList.add('auth-open');
+      show(view);
+      var nav = document.getElementById('nav');
+      if (nav && nav.classList.contains('is-open')) document.getElementById('navToggle').click();
+    }
+    function close() {
+      modal.hidden = true;
+      document.body.classList.remove('auth-open');
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+    }
+
+    document.addEventListener('click', function (e) {
+      var trigger = e.target.closest('[data-auth]');
+      if (trigger) {
+        e.preventDefault();
+        var view = trigger.getAttribute('data-auth');
+        if (modal.hidden) open(view); else show(view);
+        return;
+      }
+      if (e.target.closest('[data-auth-close]')) close();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !modal.hidden) close();
+    });
+
+    [].slice.call(modal.querySelectorAll('.pw__toggle')).forEach(function (t) {
+      t.addEventListener('click', function () {
+        var input = t.previousElementSibling;
+        var showing = input.type === 'text';
+        input.type = showing ? 'password' : 'text';
+        t.textContent = showing ? 'Ver' : 'Ocultar';
+        t.setAttribute('aria-label', showing ? 'Mostrar contraseña' : 'Ocultar contraseña');
+      });
+    });
+
+    var regPass = document.getElementById('regPass');
+    var meter = modal.querySelector('.pw__meter i');
+    function strength(p) {
+      var s = 0;
+      if (p.length >= 8) s++;
+      if (/[A-Z]/.test(p)) s++;
+      if (/\d/.test(p)) s++;
+      if (/[^A-Za-z0-9]/.test(p) || p.length >= 12) s++;
+      return s;
+    }
+    if (regPass && meter) {
+      regPass.addEventListener('input', function () {
+        var s = strength(regPass.value);
+        meter.style.width = (s * 25) + '%';
+        meter.style.background = s <= 1 ? '#ff8a7a' : s === 2 ? '#e9c46a' : '#5fd38d';
+      });
+    }
+
+    function fail(form, msg, field) {
+      var m = form.querySelector('.auth__msg');
+      m.textContent = msg; m.classList.add('is-error');
+      if (field) { field.classList.add('is-invalid'); field.focus(); }
+      return false;
+    }
+    function ok(form, msg) {
+      var m = form.querySelector('.auth__msg');
+      m.classList.remove('is-error');
+      m.textContent = msg;
+      return m;
+    }
+    modal.addEventListener('input', function (e) { e.target.classList && e.target.classList.remove('is-invalid'); });
+
+    var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    function waLink(text) { return 'https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(text); }
+    function appendLink(m, href, label) {
+      var a = document.createElement('a');
+      a.href = href; a.target = '_blank'; a.rel = 'noopener'; a.textContent = label;
+      m.appendChild(document.createTextNode(' '));
+      m.appendChild(a);
+    }
+
+    // Iniciar sesión
+    var login = document.getElementById('loginForm');
+    login.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var email = document.getElementById('loginEmail');
+      var pass = document.getElementById('loginPass');
+      if (!emailRe.test(email.value.trim())) return fail(login, 'Escribe un correo electrónico válido.', email);
+      if (pass.value.length < 8) return fail(login, 'La contraseña tiene al menos 8 caracteres.', pass);
+      if (!CONFIG.authApi) {
+        var m = ok(login, 'El panel de inversionistas se habilitará muy pronto. Te avisaremos por WhatsApp.');
+        appendLink(m, waLink('Hola, quiero información sobre el acceso a mi cuenta Jhoel 1%. Correo: ' + email.value.trim()), 'Escríbenos');
+        return;
+      }
+      // Cuando exista el backend: POST CONFIG.authApi + '/login'
+    });
+
+    // Registrarse
+    var reg = document.getElementById('registerForm');
+    reg.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var f = function (id) { return document.getElementById(id); };
+      var first = f('regFirst'), last = f('regLast'), email = f('regEmail'), country = f('regCountry'),
+          phone = f('regPhone'), pass = f('regPass'), ref = f('regRef');
+      if (!first.value.trim()) return fail(reg, 'Escribe tus nombres.', first);
+      if (!last.value.trim()) return fail(reg, 'Escribe tus apellidos.', last);
+      if (!emailRe.test(email.value.trim())) return fail(reg, 'Escribe un correo electrónico válido.', email);
+      if (!country.value) return fail(reg, 'Selecciona tu país.', country);
+      if (phone.value.replace(/\D/g, '').length < 8) return fail(reg, 'Escribe tu número de WhatsApp con código de país.', phone);
+      if (strength(pass.value) < 3) return fail(reg, 'La contraseña necesita 8 caracteres, una mayúscula y un número.', pass);
+      if (!f('regAdult').checked) return fail(reg, 'Debes ser mayor de 18 años para registrarte.');
+      if (!f('regTerms').checked) return fail(reg, 'Debes aceptar los Términos y Condiciones.');
+
+      if (!CONFIG.authApi) {
+        // Sin backend: se envía la solicitud por WhatsApp (nunca la contraseña).
+        var text = 'Hola, quiero crear mi cuenta en Jhoel 1%.\n' +
+          'Nombre: ' + first.value.trim() + ' ' + last.value.trim() + '\n' +
+          'Correo: ' + email.value.trim() + '\n' +
+          'País: ' + country.value + '\n' +
+          'WhatsApp: ' + phone.value.trim() +
+          (ref.value.trim() ? '\nCódigo de referido: ' + ref.value.trim() : '');
+        var url = waLink(text);
+        var win = window.open(url, '_blank', 'noopener');
+        var m = ok(reg, '¡Gracias, ' + first.value.trim() + '! Confirma tu solicitud por WhatsApp y activaremos tu cuenta tras verificar tu identidad.');
+        if (!win) appendLink(m, url, 'Enviar por WhatsApp');
+        return;
+      }
+      // Cuando exista el backend: POST CONFIG.authApi + '/register'
+    });
+
+    // Recuperar contraseña
+    var forgot = document.getElementById('forgotForm');
+    forgot.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var email = document.getElementById('forgotEmail');
+      if (!emailRe.test(email.value.trim())) return fail(forgot, 'Escribe un correo electrónico válido.', email);
+      var m = ok(forgot, 'Si el correo está registrado, recibirás las instrucciones en unos minutos.');
+      if (!CONFIG.authApi) appendLink(m, waLink('Hola, necesito recuperar el acceso a mi cuenta Jhoel 1%. Correo: ' + email.value.trim()), 'O escríbenos por WhatsApp');
+    });
+  }
+
   function initYear() {
     var y = document.getElementById('year');
     if (y) y.textContent = new Date().getFullYear();
@@ -293,6 +532,8 @@
     safe(initSimulator, 'simulator');
     safe(initContact, 'contact');
     safe(initTerms, 'terms');
+    safe(initLang, 'lang');
+    safe(initAuth, 'auth');
     safe(initYear, 'year');
   }
 

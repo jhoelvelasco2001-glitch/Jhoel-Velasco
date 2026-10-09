@@ -8,7 +8,11 @@ Inicio · Cifras clave · ¿Qué es? + Misión · Pilares · Fundador · Planes 
 ## Configuración rápida
 En `main.js`, bloque `CONFIG`:
 - `whatsapp`: tu número con código de país, solo dígitos (ej. `51987654321`). Mientras esté vacío, el formulario no abre WhatsApp.
+- `authApi`: dirección del servidor de cuentas. Mientras esté vacía, "Registrarse" envía la solicitud por WhatsApp (sin la contraseña) e "Iniciar sesión" muestra un aviso.
 - Tasas del simulador (`baseRate`, `perReferral`, `maxBonus`, `promoRate`, `promoMonths`).
+
+## Idiomas
+El botón del globo traduce la página con Google Translate a 17 idiomas. La marca "Jhoel 1%" no se traduce. Funciona en la web publicada (no en vista previa sin internet).
 
 ## Publicar
 Sube el contenido de esta carpeta (incluido `.htaccess`) a `public_html` en Hostinger, o arrástrala a Netlify / Vercel / GitHub Pages.
