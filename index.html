@@ -12,8 +12,8 @@
   <link rel="icon" type="image/png" href="assets/img/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@300;400;500;600;700&display=swap">
-  <link rel="stylesheet" href="styles.css?v=20261010">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@300;400;500;600;700&family=Sora:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="styles.css?v=20261010b">
 </head>
 <body>
 
@@ -131,6 +131,7 @@
         <div class="hero__mark reveal" id="heroMark">
           <div class="hero__halo" aria-hidden="true"></div>
           <img src="assets/img/logo.webp" alt="Logotipo de Jhoel 1%" width="1254" height="1254">
+          <canvas class="hero__3d" id="coin3d" role="img" aria-label="Moneda dorada en 3D con el logotipo de Jhoel 1%"></canvas>
           <div class="chip-float chip-float--a" aria-hidden="true"><span class="chip-float__dot"></span><b>1%</b> mensual objetivo</div>
           <div class="chip-float chip-float--b" aria-hidden="true"><b>+0.01%</b> por referido</div>
           <div class="chip-float chip-float--c" aria-hidden="true"><b>2%</b> promoción de lanzamiento</div>
@@ -791,6 +792,8 @@
 
   <script src="lib/supabase.js?v=2.117.3" defer></script>
   <script src="config.js?v=20261009" defer></script>
-  <script src="main.js?v=20261010" defer></script>
+  <script src="main.js?v=20261010b" defer></script>
+  <script src="lib/three.min.js?v=r128" defer></script>
+  <script src="hero3d.js?v=20261010" defer></script>
 </body>
 </html>

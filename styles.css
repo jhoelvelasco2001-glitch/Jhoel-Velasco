@@ -772,3 +772,33 @@ body::before {
 .hero__inner { grid-template-columns: 1.25fr .75fr; }
 .hero__title { font-size: clamp(2.5rem, 4.9vw, 4.6rem); }
 @media (max-width: 900px) { .hero__inner { grid-template-columns: 1fr; } }
+
+/* ==========================================================================
+   Moneda 3D y tipografía de cifras
+   ========================================================================== */
+:root { --num: "Sora", "Manrope", system-ui, sans-serif; }
+
+.hero__3d { position: absolute; inset: -8%; width: 116%; height: 116%; z-index: 1; opacity: 0; transition: opacity 1s var(--ease); }
+.hero__mark.has-3d .hero__3d { opacity: 1; }
+.hero__mark.has-3d > img { opacity: 0; animation: none; }
+.hero__mark > img { transition: opacity .6s; }
+
+/* Cifras con letra moderna, de ancho fijo */
+.figure__num, .plan__rate strong, .field output, .sim__kpis strong, .chip-float b,
+.founder__stats strong, .term__value, .flow__n, .ladder__labels b {
+  font-family: var(--num);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -.02em;
+}
+.figure__num { font-weight: 700; font-size: clamp(2.1rem, 3.8vw, 3.2rem); }
+.plan__rate strong { font-weight: 700; font-size: clamp(2.8rem, 4.4vw, 3.8rem); letter-spacing: -.035em; }
+.field output { font-weight: 600; font-size: 1.15rem; }
+.sim__kpis strong { font-weight: 700; font-size: clamp(1.3rem, 2vw, 1.75rem); }
+.chip-float b { font-weight: 700; font-size: .95rem; }
+.founder__stats strong { font-weight: 700; font-size: 2rem; }
+.term__value { font-weight: 700; font-size: 1.25rem; }
+.flow__n { font-weight: 700; font-size: 1rem; }
+.hero__3d {
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 52%, transparent 72%);
+  mask-image: radial-gradient(circle at 50% 50%, #000 52%, transparent 72%);
+}

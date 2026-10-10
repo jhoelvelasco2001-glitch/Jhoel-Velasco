@@ -19,6 +19,7 @@ En `main.js`, bloque `CONFIG`:
 - `supabase/schema.sql`: base de datos y reglas de seguridad.
 - `supabase/GUIA-SUPABASE.md`: guía paso a paso para conectarlo todo.
 - `lib/supabase.js`: librería oficial de Supabase (v2.117.3, licencia MIT).
+- `hero3d.js` + `lib/three.min.js` (Three.js r128, licencia MIT): moneda 3D del inicio. Sin WebGL se muestra el logo normal.
 
 ## Idiomas
 El botón del globo traduce la página con Google Translate a 17 idiomas. La marca "Jhoel 1%" no se traduce. Funciona en la web publicada (no en vista previa sin internet).

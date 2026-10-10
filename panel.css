@@ -389,3 +389,17 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 600; line-height: 1.1; marg
 .side__admin { color: var(--gold) !important; margin-top: 8px; border: 1px dashed var(--line); }
 .kyc .pill--bad + .btn, .kyc .pill--warn { justify-self: end; }
 .kyc__side { display: grid; justify-items: end; gap: 6px; }
+
+/* Cifras con letra moderna, de ancho fijo */
+:root { --num: "Sora", "Manrope", system-ui, sans-serif; }
+.kpi__value, .ring__inner strong, .avail strong, .close-sum__total dd, .level__now strong,
+.ref-stats strong, .cycle__list dd, .close-sum dd, .feed__amt, .table .num, .chart .val {
+  font-family: var(--num);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -.02em;
+}
+.kpi__value { font-weight: 700; font-size: clamp(1.45rem, 2vw, 1.85rem); }
+.kpi--hero .kpi__value { font-size: clamp(1.8rem, 2.8vw, 2.4rem); }
+.ring__inner strong { font-weight: 700; font-size: 1.9rem; }
+.avail strong, .close-sum__total dd { font-weight: 700; font-size: 1.35rem; }
+.level__now strong, .ref-stats strong { font-weight: 700; font-size: 1.6rem; }
