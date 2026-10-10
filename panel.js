@@ -264,7 +264,6 @@
     var d = today.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     $('today').textContent = d.charAt(0).toUpperCase() + d.slice(1);
     $('adminLink').hidden = u.role !== 'admin';
-    $('addCapital').disabled = S.closing;
   }
 
   function renderSummary() {
@@ -652,6 +651,10 @@
     }
     function open() {
       if (!S) return;
+      if (S.closing) {
+        toast('Tienes un retiro total en proceso. Cuando termine podrás volver a invertir.');
+        return;
+      }
       lastFocus = document.activeElement;
       st = { amount: 0, method: null, step: 1 };
       $('depAmount').value = '';
@@ -842,6 +845,16 @@
     });
   }
 
+  function initDemoReset() {
+    var b = $('demoReset');
+    if (!b) return;
+    b.hidden = LIVE;
+    b.addEventListener('click', function () {
+      store.set(REQ_KEY, []); store.set(DEP_KEY, []);
+      load().then(function () { toast('Demostración reiniciada.'); });
+    });
+  }
+
   function initLogout() {
     $('logout').addEventListener('click', function (e) {
       if (!LIVE) return;
@@ -858,6 +871,7 @@
     safe(initKyc, 'kyc');
     safe(initSoon, 'pronto');
     safe(initLogout, 'salir');
+    safe(initDemoReset, 'demo');
     safe(initDeposit, 'deposito');
     load().then(function () {
       $('loading').classList.add('is-done');

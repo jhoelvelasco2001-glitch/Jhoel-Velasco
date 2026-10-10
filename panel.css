@@ -518,3 +518,6 @@ body.dep-open { overflow: hidden; }
   .pay__tag { position: absolute; top: -9px; right: 12px; }
   .dep__steps li { font-size: .7rem; }
 }
+
+.demo-bar__reset { margin-left: 10px; padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(26,19,3,.5); background: rgba(255,255,255,.25); color: #1a1303; font: 700 .74rem var(--sans); cursor: pointer; }
+.demo-bar__reset:hover { background: rgba(255,255,255,.45); }
