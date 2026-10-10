@@ -760,6 +760,12 @@
         }
         if (b.usdtTrc20) {
           box.appendChild(el('h4', null, 'Depósito USDT · red TRC20'));
+          if (b.usdtTrc20Qr) {
+            var qr = el('figure', 'dep__qr');
+            var qi = el('img'); qi.src = b.usdtTrc20Qr; qi.alt = 'Código QR de la dirección USDT TRC20'; qi.width = 180; qi.height = 180;
+            qr.appendChild(qi); qr.appendChild(el('figcaption', null, 'Escanéalo desde Binance → Retirar → USDT → red TRC20'));
+            box.appendChild(qr);
+          }
           box.appendChild(copyRow('Dirección USDT (TRC20)', b.usdtTrc20));
         }
         if (b.usdtBep20) {

@@ -521,3 +521,7 @@ body.dep-open { overflow: hidden; }
 
 .demo-bar__reset { margin-left: 10px; padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(26,19,3,.5); background: rgba(255,255,255,.25); color: #1a1303; font: 700 .74rem var(--sans); cursor: pointer; }
 .demo-bar__reset:hover { background: rgba(255,255,255,.45); }
+
+.dep__qr { margin: 0; display: grid; justify-items: center; gap: 8px; padding: 16px; border-radius: 14px; background: rgba(255,255,255,.03); border: 1px solid var(--line-soft); }
+.dep__qr img { width: 180px; height: 180px; border-radius: 10px; background: #fff; padding: 8px; image-rendering: pixelated; }
+.dep__qr figcaption { font-size: .76rem; color: var(--muted); text-align: center; }

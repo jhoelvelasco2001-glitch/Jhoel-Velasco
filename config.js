@@ -20,7 +20,8 @@
       binance: {
         payId: '223487041',   // tu Binance Pay ID
         payName: 'Jhoel 1%',  // nombre que verá el cliente en Binance Pay
-        usdtTrc20: '',        // dirección USDT red TRC20, ej. 'TXyz…'
+        usdtTrc20: 'TJHadW9CgdQAR4uvXBFpLK1f9sEPGYNPtY',  // dirección USDT red TRC20
+        usdtTrc20Qr: 'assets/img/qr-usdt-trc20.png',    // código QR de esa dirección
         usdtBep20: ''         // dirección USDT red BEP20 (BSC), opcional
       },
       bank: {
