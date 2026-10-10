@@ -81,6 +81,31 @@
       },
       credit: function (real, commit, note) { return db.rpc('admin_credit_profits', { p_real_result: real, p_commit: commit, p_note: note || null }).then(unwrap); },
       results: function () { return db.from('monthly_results').select('*').order('created_at', { ascending: false }).limit(50).then(unwrap); },
+      deposits: function () {
+        return db.from('deposit_requests').select('*, profiles(first_name,last_name,email,phone)')
+          .order('created_at', { ascending: false }).limit(500).then(function (r) {
+            if (r.error) {
+              if (/deposit_requests/.test(r.error.message || '')) throw new Error('Falta crear la tabla de depósitos: ejecuta supabase/02-depositos.sql en Supabase.');
+              throw r.error;
+            }
+            var list = r.data;
+            var paths = list.filter(function (d) { return d.receipt_path; }).map(function (d) { return d.receipt_path; });
+            if (!paths.length) return list;
+            return db.storage.from('receipts').createSignedUrls(paths, 3600).then(function (s) {
+              var urls = {};
+              (s.data || []).forEach(function (u) { urls[u.path] = u.signedUrl; });
+              list.forEach(function (d) { d.url = urls[d.receipt_path] || null; });
+              return list;
+            });
+          });
+      },
+      pendingDeposits: function () {
+        return db.from('deposit_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending')
+          .then(function (r) { return r.error ? 0 : (r.count || 0); });
+      },
+      processDeposit: function (id, status, note, promo) {
+        return db.rpc('admin_process_deposit', { p_id: id, p_status: status, p_note: note || null, p_promo: !!promo }).then(unwrap);
+      },
       signOut: function () { return db.auth.signOut(); }
     };
   }
@@ -131,6 +156,15 @@
     ].map(function (d) {
       d.user_id = d.user.id; d.status = 'pending'; d.created_at = addDays(today, -1).toISOString(); d.url = null;
       d.profiles = { first_name: d.user.first_name, last_name: d.user.last_name, email: d.user.email };
+      return d;
+    });
+    var deposits = [
+      { id: 501, user: byName('Valeria'), amount: 1500, method: 'binance', reference: '298374012938', status: 'pending', created_at: addDays(today, 0).toISOString() },
+      { id: 502, user: byName('Diego'), amount: 300, method: 'yape', reference: 'OP-77120', status: 'pending', created_at: addDays(today, -1).toISOString() },
+      { id: 490, user: byName('Ana'), amount: 5000, method: 'bank', reference: 'BCP 00918273', status: 'confirmed', created_at: addDays(today, -86).toISOString() }
+    ].map(function (d) {
+      d.user_id = d.user.id; d.url = null;
+      d.profiles = { first_name: d.user.first_name, last_name: d.user.last_name, email: d.user.email, phone: d.user.phone };
       return d;
     });
     var results = [
@@ -201,6 +235,20 @@
         return P(rows);
       },
       results: function () { return P(results.slice()); },
+      deposits: function () { return P(deposits.slice()); },
+      pendingDeposits: function () { return P(deposits.filter(function (d) { return d.status === 'pending'; }).length); },
+      processDeposit: function (did, status, note) {
+        deposits.forEach(function (d) {
+          if (d.id !== did) return;
+          d.status = status; d.admin_note = note || null; d.processed_at = new Date().toISOString();
+          if (status === 'confirmed') investors.forEach(function (x) {
+            if (x.id !== d.user_id) return;
+            if (x.inv_status === 'none') { x.inv_status = 'active'; x.start_date = isoDay(new Date()); x.capital = d.amount; }
+            else x.capital += d.amount;
+          });
+        });
+        return P();
+      },
       signOut: function () { return P(); }
     };
   }
@@ -208,7 +256,7 @@
   /* ======================================================================
      NAVEGACIÓN
      ====================================================================== */
-  var VIEWS = ['resumen', 'inversionistas', 'retiros', 'verificaciones', 'rentabilidad'];
+  var VIEWS = ['resumen', 'inversionistas', 'depositos', 'retiros', 'verificaciones', 'rentabilidad'];
   var loaded = {};
   function showView(name) {
     if (VIEWS.indexOf(name) < 0) name = 'resumen';
@@ -222,7 +270,7 @@
   function loadView(name, force) {
     if (loaded[name] && !force) return Promise.resolve();
     loaded[name] = true;
-    var fn = { resumen: loadHome, inversionistas: loadInvestors, retiros: loadWithdrawals, verificaciones: loadKyc, rentabilidad: loadResults }[name];
+    var fn = { resumen: loadHome, inversionistas: loadInvestors, depositos: loadDeposits, retiros: loadWithdrawals, verificaciones: loadKyc, rentabilidad: loadResults }[name];
     return fn().catch(function (e) { loaded[name] = false; toast(errText(e)); });
   }
   function initNav() {
@@ -258,6 +306,7 @@
       var bw = $('badgeW'), bk = $('badgeK');
       bw.textContent = s.withdrawals_pending; bw.hidden = !s.withdrawals_pending;
       bk.textContent = s.kyc_pending; bk.hidden = !s.kyc_pending;
+      api.pendingDeposits().then(function (n) { var bd = $('badgeD'); bd.textContent = n; bd.hidden = !n; });
       return s;
     });
   }
@@ -505,6 +554,81 @@
   }
 
   /* ======================================================================
+     DEPÓSITOS
+     ====================================================================== */
+  var dList = [], dFilter = 'pending';
+  var PAY_NAME = { binance: 'Binance', bank: 'Transferencia bancaria', yape: 'Yape / Plin' };
+  var DST = { pending: ['Por confirmar', 'warn'], confirmed: ['Confirmado', 'ok'], rejected: ['Rechazado', 'bad'] };
+  function loadDeposits() { return api.deposits().then(function (l) { dList = l; renderDeposits(); }); }
+  function renderDeposits() {
+    var body = $('dBody'); body.innerHTML = '';
+    var list = dList.filter(function (d) { return dFilter === 'all' || d.status === dFilter; });
+    if (dFilter === 'pending') list.sort(function (a, b) { return parseDate(a.created_at) - parseDate(b.created_at); });
+    if (!list.length) return emptyRow(body, 7, dFilter === 'pending' ? 'No hay depósitos por confirmar.' : 'No hay depósitos en esta lista.');
+    list.forEach(function (d) {
+      var tr = el('tr');
+      tr.appendChild(el('td', 'muted', fmtDateTime(d.created_at)));
+      var p = d.profiles || {};
+      var c1 = el('td'); c1.appendChild(whoCell(fullName(p), p.email)); tr.appendChild(c1);
+      tr.appendChild(el('td', 'num', money(d.amount)));
+      var c3 = el('td', 'dest');
+      c3.appendChild(el('span', 'pay-chip' + (d.method === 'binance' ? ' pay-chip--binance' : ''), PAY_NAME[d.method] || d.method));
+      c3.appendChild(el('code', null, d.reference));
+      tr.appendChild(c3);
+      var c4 = el('td');
+      if (d.url) { var a = el('a', 'doc-link', 'Ver comprobante'); a.href = d.url; a.target = '_blank'; a.rel = 'noopener'; c4.appendChild(a); }
+      else c4.appendChild(el('span', 'muted', d.receipt_path ? 'No disponible' : 'Sin archivo'));
+      tr.appendChild(c4);
+      var c5 = el('td'); var s = DST[d.status] || ['—', 'blue']; c5.appendChild(pill(s[0], s[1]));
+      if (d.admin_note) c5.appendChild(el('div', 'muted', d.admin_note));
+      tr.appendChild(c5);
+
+      var c6 = el('td'); var acts = el('div', 'acts');
+      function act(status, note, promo) {
+        return api.processDeposit(d.id, status, note, promo).then(function () {
+          toast(status === 'confirmed' ? 'Depósito confirmado: ' + money(d.amount) + ' sumados al capital.' : 'Depósito rechazado.');
+          loaded.resumen = false; loaded.inversionistas = false;
+          refreshBadges();
+          return loadDeposits();
+        }).catch(function (e) { toast(errText(e)); });
+      }
+      if (d.status === 'pending') {
+        var promoLbl = el('label', 'promo-check');
+        var promo = el('input'); promo.type = 'checkbox';
+        promoLbl.appendChild(promo); promoLbl.appendChild(document.createTextNode('Promoción 2% (solo primera inversión)'));
+        acts.appendChild(btn('Confirmar', 'btn--gold', function () { act('confirmed', null, promo.checked); }));
+        acts.appendChild(btn('Rechazar', 'btn--danger', function () {
+          if (c6.querySelector('.note-row')) return;
+          var row = el('div', 'note-row');
+          var input = el('input'); input.placeholder = 'Motivo (ej. no llegó el pago)'; input.setAttribute('aria-label', 'Motivo del rechazo');
+          row.appendChild(input);
+          row.appendChild(btn('Confirmar', 'btn--danger', function () {
+            if (input.value.trim().length < 3) { input.focus(); toast('Escribe el motivo del rechazo.'); return; }
+            act('rejected', input.value.trim());
+          }));
+          c6.appendChild(row); input.focus();
+        }));
+        c6.appendChild(acts);
+        c6.appendChild(promoLbl);
+      } else {
+        acts.appendChild(el('span', 'muted', d.processed_at ? fmtDateTime(d.processed_at) : '—'));
+        c6.appendChild(acts);
+      }
+      tr.appendChild(c6);
+      body.appendChild(tr);
+    });
+  }
+  function initDeposits() {
+    [].slice.call(document.querySelectorAll('[data-dfilter]')).forEach(function (c) {
+      c.addEventListener('click', function () {
+        document.querySelectorAll('[data-dfilter]').forEach(function (x) { x.classList.toggle('is-on', x === c); });
+        dFilter = c.getAttribute('data-dfilter');
+        renderDeposits();
+      });
+    });
+  }
+
+  /* ======================================================================
      VERIFICACIONES
      ====================================================================== */
   function loadKyc() {
@@ -635,6 +759,7 @@
     });
     safe(initNav, 'nav');
     safe(initInvestors, 'inversionistas');
+    safe(initDeposits, 'depositos');
     safe(initWithdrawals, 'retiros');
     safe(initProfits, 'rentabilidad');
     api.guard().then(function () {

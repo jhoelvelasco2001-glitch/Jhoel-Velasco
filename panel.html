@@ -74,7 +74,7 @@
           <h1>Hola, <span id="userFirst">Ana</span></h1>
         </div>
         <div class="top__actions">
-          <a class="btn btn--gold btn--sm" id="addCapital" href="https://wa.me/51912536501" target="_blank" rel="noopener">+ Agregar capital</a>
+          <button type="button" class="btn btn--gold btn--sm" id="addCapital" data-deposit>+ Agregar capital</button>
           <div class="avatar" id="avatar" aria-hidden="true">AT</div>
         </div>
       </header>
@@ -96,7 +96,7 @@
             <li><span class="steps__n">2</span><div><strong>Realiza tu depósito</strong><span>Desde US$100. Escríbenos y te enviamos los datos de pago.</span></div></li>
             <li><span class="steps__n">3</span><div><strong>Recibe tu rentabilidad</strong><span>Registramos tu depósito y verás tu inversión aquí mismo.</span></div></li>
           </ol>
-          <a class="btn btn--gold" id="depositWa" href="https://wa.me/51912536501" target="_blank" rel="noopener">Quiero hacer mi depósito</a>
+          <button type="button" class="btn btn--gold" id="depositWa" data-deposit>Hacer mi depósito</button>
         </article>
 
         <div class="kpis">
@@ -350,6 +350,109 @@
     </div>
   </div>
 
+
+  <!-- AGREGAR CAPITAL -->
+  <div class="dep" id="dep" hidden>
+    <div class="dep__backdrop" data-dep-close></div>
+    <section class="dep__dialog" role="dialog" aria-modal="true" aria-labelledby="depTitle">
+      <header class="dep__head">
+        <div>
+          <p class="top__eyebrow">Agregar capital</p>
+          <h2 id="depTitle">Invierte en tu futuro</h2>
+        </div>
+        <button type="button" class="dep__close" data-dep-close aria-label="Cerrar">×</button>
+      </header>
+
+      <ol class="dep__steps" aria-label="Pasos">
+        <li class="is-on" data-step-dot="1"><span>1</span>Monto</li>
+        <li data-step-dot="2"><span>2</span>Medio de pago</li>
+        <li data-step-dot="3"><span>3</span>Confirmar</li>
+      </ol>
+
+      <!-- Paso 1: monto -->
+      <div class="dep__step" data-step="1">
+        <label class="dep__label" for="depAmount">¿Cuánto deseas agregar?</label>
+        <div class="dep__amount">
+          <span class="dep__cur">US$</span>
+          <input type="number" id="depAmount" inputmode="decimal" min="50" max="100000" step="1" placeholder="0">
+        </div>
+        <div class="dep__chips" role="group" aria-label="Montos rápidos">
+          <button type="button" data-amt="100">US$100</button>
+          <button type="button" data-amt="500">US$500</button>
+          <button type="button" data-amt="1000">US$1,000</button>
+          <button type="button" data-amt="5000">US$5,000</button>
+          <button type="button" data-amt="10000">US$10,000</button>
+        </div>
+        <p class="dep__hint" id="depLimits">Mínimo US$100 · Máximo US$100,000 por inversionista</p>
+        <dl class="dep__sum">
+          <div><dt>Capital actual</dt><dd id="depNow">US$0.00</dd></div>
+          <div><dt>Capital después del depósito</dt><dd id="depAfter">US$0.00</dd></div>
+          <div class="dep__sum-hl"><dt>Rentabilidad objetivo mensual</dt><dd id="depMonthly">US$0.00</dd></div>
+        </dl>
+        <p class="dep__fine">Estimación con tu tasa objetivo actual (<span id="depRate">1.00%</span>). No es una ganancia garantizada.</p>
+        <p class="form__msg" id="depMsg1" role="status"></p>
+        <div class="dep__actions"><button type="button" class="btn btn--gold" id="depNext1">Continuar</button></div>
+      </div>
+
+      <!-- Paso 2: medio de pago -->
+      <div class="dep__step" data-step="2" hidden>
+        <p class="dep__label">Elige cómo quieres pagar <b id="depAmountLabel">US$0</b></p>
+        <div class="dep__methods" role="radiogroup" aria-label="Medio de pago">
+          <button type="button" class="pay pay--binance" role="radio" aria-checked="false" data-method="binance">
+            <span class="pay__logo"><svg viewBox="0 0 32 32" aria-hidden="true"><g><rect x="13.3" y="13.3" width="5.4" height="5.4" transform="rotate(45 16 16)"/><rect x="13.3" y="4.8" width="5.4" height="5.4" transform="rotate(45 16 7.5)"/><rect x="13.3" y="21.8" width="5.4" height="5.4" transform="rotate(45 16 24.5)"/><rect x="4.8" y="13.3" width="5.4" height="5.4" transform="rotate(45 7.5 16)"/><rect x="21.8" y="13.3" width="5.4" height="5.4" transform="rotate(45 24.5 16)"/></g></svg></span>
+            <span class="pay__txt"><strong>Binance</strong><small>Binance Pay o USDT · sin comisión · al instante</small></span>
+            <span class="pay__tag">Recomendado</span>
+          </button>
+          <button type="button" class="pay" role="radio" aria-checked="false" data-method="bank">
+            <span class="pay__logo pay__logo--bank"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h18L12 4 3 10Zm2 0v8m4-8v8m6-8v8m4-8v8M3 20h18"/></svg></span>
+            <span class="pay__txt"><strong>Transferencia bancaria</strong><small>Dólares o soles · 1 día hábil</small></span>
+          </button>
+          <button type="button" class="pay" role="radio" aria-checked="false" data-method="yape">
+            <span class="pay__logo pay__logo--yape"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18h3"/></svg></span>
+            <span class="pay__txt"><strong>Yape / Plin</strong><small>Solo Perú · en soles al tipo de cambio del día</small></span>
+          </button>
+        </div>
+        <p class="form__msg" id="depMsg2" role="status"></p>
+        <div class="dep__actions">
+          <button type="button" class="btn btn--ghost" data-dep-back="1">Atrás</button>
+          <button type="button" class="btn btn--gold" id="depNext2">Ver datos de pago</button>
+        </div>
+      </div>
+
+      <!-- Paso 3: datos de pago y confirmación -->
+      <div class="dep__step" data-step="3" hidden>
+        <div class="dep__total">
+          <span>Monto a enviar</span>
+          <strong id="depTotal">US$0.00</strong>
+        </div>
+        <div class="dep__info" id="depInfo"></div>
+        <form class="form dep__confirm" id="depForm" novalidate>
+          <label for="depRef">Número de orden u operación
+            <input type="text" id="depRef" autocomplete="off" placeholder="Ej. 2938471029384">
+          </label>
+          <label class="dep__file" for="depFile">
+            <span>Comprobante de pago <em>(opcional)</em></span>
+            <input type="file" id="depFile" accept="image/jpeg,image/png,image/webp,application/pdf">
+          </label>
+          <p class="dep__fine">Registramos tu capital cuando confirmamos el pago. Tu rentabilidad empieza a contar desde esa fecha.</p>
+          <p class="form__msg" id="depMsg3" role="status"></p>
+          <div class="dep__actions">
+            <button type="button" class="btn btn--ghost" data-dep-back="2">Atrás</button>
+            <button type="submit" class="btn btn--gold" id="depSend">Ya realicé el pago</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Listo -->
+      <div class="dep__step dep__done" data-step="4" hidden>
+        <div class="dep__check" aria-hidden="true">✓</div>
+        <h3>¡Recibimos tu aviso de pago!</h3>
+        <p id="depDoneText">Verificaremos tu depósito y lo verás reflejado en tu panel.</p>
+        <div class="dep__actions dep__actions--center"><button type="button" class="btn btn--gold" data-dep-close>Entendido</button></div>
+      </div>
+    </section>
+  </div>
+
   <!-- Navegación inferior en celular -->
   <nav class="tabbar" aria-label="Menú del panel">
     <a href="#resumen" data-view="resumen" class="is-active"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h8V3H3zm10 8h8V11h-8zM3 21h8v-6H3zm10-18v6h8V3z"/></svg><span>Resumen</span></a>
@@ -362,7 +465,7 @@
   <input type="file" id="kycFile" accept="image/jpeg,image/png,image/webp,application/pdf" hidden>
 
   <script src="lib/supabase.js?v=2.117.3" defer></script>
-  <script src="config.js?v=20261009" defer></script>
-  <script src="panel.js?v=20261009b" defer></script>
+  <script src="config.js?v=20261010" defer></script>
+  <script src="panel.js?v=20261010" defer></script>
 </body>
 </html>

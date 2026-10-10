@@ -95,9 +95,13 @@
       referrals: refs.map(function (r) { return { name: r[0], date: addDays(today, -r[1]), valid: r[2] }; }),
       kycDocs: { id: { status: 'approved' }, selfie: { status: 'approved' }, address: null },
       ledger: ledger,
-      requests: requests
+      requests: requests,
+      deposits: store.get(DEP_KEY, []).map(function (d) {
+        return { date: new Date(d.date), amount: d.amount, method: d.method, reference: d.reference, status: 'pending' };
+      })
     };
   }
+  var DEP_KEY = 'j1_demo_deposits';
 
   /* ---------- Datos reales (Supabase) ---------- */
   function liveState() {
@@ -111,8 +115,11 @@
         db.from('movements').select('*').eq('user_id', uid).order('created_at', { ascending: true }),
         db.from('withdrawal_requests').select('*').eq('user_id', uid).order('created_at', { ascending: true }),
         db.rpc('my_referrals'),
-        db.from('kyc_docs').select('*').eq('user_id', uid).order('created_at', { ascending: true })
+        db.from('kyc_docs').select('*').eq('user_id', uid).order('created_at', { ascending: true }),
+        db.from('deposit_requests').select('*').eq('user_id', uid).order('created_at', { ascending: true })
       ]).then(function (res) {
+        // Si aún no se creó la tabla de depósitos (02-depositos.sql), el panel sigue funcionando
+        if (res[6].error) res[6] = { data: [], error: null };
         for (var i = 0; i < res.length; i++) if (res[i].error) throw res[i].error;
         var p = res[0].data, inv = res[1].data;
         var kycDocs = { id: null, selfie: null, address: null };
@@ -132,6 +139,10 @@
           requests: res[3].data.map(function (w) {
             return { date: parseDate(w.created_at), type: w.type, amount: Number(w.amount), profit: Number(w.profit_part),
                      method: w.method, status: w.status, note: w.admin_note };
+          }),
+          deposits: res[6].data.map(function (d) {
+            return { date: parseDate(d.created_at), amount: Number(d.amount), method: d.method, reference: d.reference,
+                     status: d.status, note: d.admin_note };
           })
         };
       });
@@ -188,6 +199,16 @@
         detail: r.method, amount: -r.amount, status: REQ_STATUS[r.status] || ['—', 'blue'], muted: r.status === 'rejected'
       });
     });
+    var METHOD = { binance: 'Binance', bank: 'Transferencia bancaria', yape: 'Yape / Plin' };
+    (s.deposits || []).forEach(function (d) {
+      if (d.status === 'confirmed') return;
+      s.movements.push({
+        date: d.date, kind: 'deposit', title: d.status === 'rejected' ? 'Depósito rechazado' : 'Depósito por confirmar',
+        detail: (METHOD[d.method] || d.method) + ' · ' + d.reference + (d.note ? ' · ' + d.note : ''), amount: d.amount,
+        status: d.status === 'rejected' ? ['Rechazado', 'bad'] : ['Por confirmar', 'warn'], muted: d.status === 'rejected'
+      });
+    });
+    s.pendingDeposits = (s.deposits || []).filter(function (d) { return d.status === 'pending'; });
     s.movements.sort(function (a, b) { return b.date - a.date; });
     s.history = s.requests.slice().sort(function (a, b) { return b.date - a.date; }).map(function (r) {
       return { date: r.date, kind: 'withdraw', title: r.type === 'total' ? 'Retiro total del capital' : 'Retiro de ganancias',
@@ -243,10 +264,7 @@
     var d = today.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     $('today').textContent = d.charAt(0).toUpperCase() + d.slice(1);
     $('adminLink').hidden = u.role !== 'admin';
-    var name = (u.first + ' ' + u.last).trim();
-    var deposit = waLink('Hola, soy ' + name + ' (' + u.email + '). Quiero ' + (S.inv ? 'agregar capital a' : 'hacer el depósito de') + ' mi inversión en Jhoel 1%.');
-    $('addCapital').href = deposit;
-    $('depositWa').href = deposit;
+    $('addCapital').disabled = S.closing;
   }
 
   function renderSummary() {
@@ -600,6 +618,221 @@
     });
   }
 
+  /* ---------- Agregar capital ---------- */
+  var BINANCE_SVG = '<svg viewBox="0 0 32 32" aria-hidden="true"><g><rect x="13.3" y="13.3" width="5.4" height="5.4" transform="rotate(45 16 16)"/><rect x="13.3" y="4.8" width="5.4" height="5.4" transform="rotate(45 16 7.5)"/><rect x="13.3" y="21.8" width="5.4" height="5.4" transform="rotate(45 16 24.5)"/><rect x="4.8" y="13.3" width="5.4" height="5.4" transform="rotate(45 7.5 16)"/><rect x="21.8" y="13.3" width="5.4" height="5.4" transform="rotate(45 24.5 16)"/></g></svg>';
+  var METHOD_NAME = { binance: 'Binance', bank: 'transferencia bancaria', yape: 'Yape / Plin' };
+
+  function initDeposit() {
+    var modal = $('dep');
+    if (!modal) return;
+    var PAY = (J1.config && J1.config.payments) || {};
+    var st = { amount: 0, method: null, step: 1 };
+    var lastFocus = null;
+
+    function limits() {
+      var cap = S && S.inv ? S.inv.capital : 0;
+      var pending = S && S.pendingDeposits ? S.pendingDeposits.reduce(function (a, d) { return a + d.amount; }, 0) : 0;
+      return { min: cap > 0 ? 50 : 100, max: Math.max(0, 100000 - cap - pending), cap: cap };
+    }
+    function rate() {
+      if (!S) return 1;
+      return S.current ? S.current.rate : S.regularRate;
+    }
+    function go(n) {
+      st.step = n;
+      [].slice.call(modal.querySelectorAll('[data-step]')).forEach(function (s) { s.hidden = Number(s.getAttribute('data-step')) !== n; });
+      [].slice.call(modal.querySelectorAll('[data-step-dot]')).forEach(function (d) {
+        var k = Number(d.getAttribute('data-step-dot'));
+        d.classList.toggle('is-on', k === n || (n === 4 && k === 3));
+        d.classList.toggle('is-done', k < n);
+      });
+      modal.querySelector('.dep__steps').hidden = n === 4;
+      var first = modal.querySelector('[data-step="' + n + '"] input, [data-step="' + n + '"] button');
+      if (first) setTimeout(function () { first.focus(); }, 50);
+    }
+    function open() {
+      if (!S) return;
+      lastFocus = document.activeElement;
+      st = { amount: 0, method: null, step: 1 };
+      $('depAmount').value = '';
+      $('depRef').value = ''; $('depFile').value = '';
+      ['depMsg1', 'depMsg2', 'depMsg3'].forEach(function (id) { setMsg($(id), ''); });
+      [].slice.call(modal.querySelectorAll('[data-amt]')).forEach(function (b) { b.classList.remove('is-on'); });
+      [].slice.call(modal.querySelectorAll('[data-method]')).forEach(function (b) { b.setAttribute('aria-checked', 'false'); });
+      var L = limits();
+      $('depLimits').textContent = 'Mínimo ' + money(L.min).replace('.00', '') + ' · Disponible para invertir hasta ' + money(L.max).replace('.00', '');
+      $('depAmount').min = L.min; $('depAmount').max = L.max;
+      $('depTitle').textContent = L.cap > 0 ? 'Haz crecer tu inversión' : 'Empieza tu inversión';
+      $('depRate').textContent = rate().toFixed(2) + '%';
+      updateSummary();
+      modal.hidden = false;
+      document.body.classList.add('dep-open');
+      go(1);
+    }
+    function close() {
+      modal.hidden = true;
+      document.body.classList.remove('dep-open');
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+    }
+    function updateSummary() {
+      var v = parseFloat($('depAmount').value) || 0;
+      var L = limits();
+      $('depNow').textContent = money(L.cap);
+      $('depAfter').textContent = money(L.cap + v);
+      $('depMonthly').textContent = money((L.cap + v) * rate() / 100);
+    }
+
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('[data-deposit]')) { e.preventDefault(); open(); return; }
+      if (!modal.hidden && e.target.closest('[data-dep-close]')) { close(); return; }
+      var back = e.target.closest('[data-dep-back]');
+      if (back && !modal.hidden) go(Number(back.getAttribute('data-dep-back')));
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !modal.hidden) close(); });
+
+    $('depAmount').addEventListener('input', function () {
+      [].slice.call(modal.querySelectorAll('[data-amt]')).forEach(function (b) { b.classList.toggle('is-on', b.getAttribute('data-amt') === $('depAmount').value); });
+      setMsg($('depMsg1'), '');
+      updateSummary();
+    });
+    [].slice.call(modal.querySelectorAll('[data-amt]')).forEach(function (b) {
+      b.addEventListener('click', function () {
+        $('depAmount').value = b.getAttribute('data-amt');
+        $('depAmount').dispatchEvent(new Event('input'));
+      });
+    });
+
+    $('depNext1').addEventListener('click', function () {
+      var v = Math.round((parseFloat($('depAmount').value) || 0) * 100) / 100;
+      var L = limits();
+      if (v < L.min) { setMsg($('depMsg1'), 'El monto mínimo es ' + money(L.min) + '.', true); $('depAmount').focus(); return; }
+      if (v > L.max) { setMsg($('depMsg1'), 'Puedes agregar como máximo ' + money(L.max) + ' (tope de US$100,000 por inversionista).', true); $('depAmount').focus(); return; }
+      st.amount = v;
+      $('depAmountLabel').textContent = money(v);
+      go(2);
+    });
+
+    [].slice.call(modal.querySelectorAll('[data-method]')).forEach(function (b) {
+      b.addEventListener('click', function () {
+        st.method = b.getAttribute('data-method');
+        modal.querySelectorAll('[data-method]').forEach(function (x) { x.setAttribute('aria-checked', x === b ? 'true' : 'false'); });
+        setMsg($('depMsg2'), '');
+      });
+    });
+
+    function copyRow(label, value) {
+      var row = el('div', 'copyrow');
+      var t = el('div'); t.appendChild(el('span', null, label)); t.appendChild(el('code', null, value)); row.appendChild(t);
+      var b = el('button', null, 'Copiar'); b.type = 'button';
+      b.addEventListener('click', function () {
+        try {
+          navigator.clipboard.writeText(value).then(function () { b.textContent = 'Copiado ✓'; setTimeout(function () { b.textContent = 'Copiar'; }, 1600); },
+            function () { toast('Selecciona y copia el dato.'); });
+        } catch (err) { toast('Selecciona y copia el dato.'); }
+      });
+      row.appendChild(b);
+      return row;
+    }
+    function list(items) { var ol = el('ol'); items.forEach(function (t) { ol.appendChild(el('li', null, t)); }); return ol; }
+    function note(text, warn) { return el('p', 'dep__note' + (warn ? ' dep__note--warn' : ''), text); }
+    function askData(box) {
+      box.appendChild(note('Todavía no publicamos los datos de este medio de pago. Pídelos por WhatsApp y te respondemos al momento.', true));
+      var a = el('a', 'btn btn--ghost btn--sm', 'Pedir datos por WhatsApp');
+      a.href = waLink('Hola, quiero agregar ' + money(st.amount) + ' a mi inversión en Jhoel 1% por ' + METHOD_NAME[st.method] + '. ¿Me envías los datos de pago?');
+      a.target = '_blank'; a.rel = 'noopener';
+      box.appendChild(a);
+    }
+
+    function renderInfo() {
+      var box = $('depInfo'); box.innerHTML = '';
+      var amt = st.amount;
+      if (st.method === 'binance') {
+        var b = PAY.binance || {};
+        $('depTotal').textContent = usd.format(amt) + ' USDT';
+        if (!b.payId && !b.usdtTrc20 && !b.usdtBep20) { askData(box); return; }
+        if (b.payId) {
+          box.appendChild(el('h4', null, 'Binance Pay · sin comisión'));
+          box.appendChild(copyRow('Binance Pay ID' + (b.payName ? ' · ' + b.payName : ''), b.payId));
+          box.appendChild(list(['Abre Binance y entra a Pay → Enviar.', 'Pega el Pay ID y envía exactamente ' + usd.format(amt) + ' USDT.', 'Copia el número de orden y escríbelo abajo.']));
+        }
+        if (b.usdtTrc20) {
+          box.appendChild(el('h4', null, 'Depósito USDT · red TRC20'));
+          box.appendChild(copyRow('Dirección USDT (TRC20)', b.usdtTrc20));
+        }
+        if (b.usdtBep20) {
+          box.appendChild(el('h4', null, 'Depósito USDT · red BEP20 (BSC)'));
+          box.appendChild(copyRow('Dirección USDT (BEP20)', b.usdtBep20));
+        }
+        if (b.usdtTrc20 || b.usdtBep20) box.appendChild(note('Envía solo USDT y por la red indicada. Un envío por otra red puede perderse.', true));
+        var open = el('a', 'btn btn--binance');
+        open.innerHTML = BINANCE_SVG + '<span>Abrir Binance</span>';
+        open.href = 'https://www.binance.com/'; open.target = '_blank'; open.rel = 'noopener';
+        box.appendChild(open);
+      } else if (st.method === 'bank') {
+        var k = PAY.bank || {};
+        $('depTotal').textContent = money(amt);
+        if (!k.accountUsd && !k.accountPen) { askData(box); return; }
+        if (k.bankName) box.appendChild(copyRow('Banco', k.bankName));
+        if (k.holder) box.appendChild(copyRow('Titular', k.holder));
+        if (k.accountUsd) box.appendChild(copyRow('Cuenta en dólares', k.accountUsd));
+        if (k.cciUsd) box.appendChild(copyRow('CCI en dólares', k.cciUsd));
+        if (k.accountPen) box.appendChild(copyRow('Cuenta en soles', k.accountPen));
+        if (k.cciPen) box.appendChild(copyRow('CCI en soles', k.cciPen));
+        box.appendChild(note('La cuenta de origen debe estar a tu nombre. Las comisiones del banco corren por tu cuenta.'));
+      } else {
+        var y = PAY.yape || {};
+        $('depTotal').textContent = money(amt);
+        if (!y.number) { askData(box); return; }
+        box.appendChild(copyRow('Número Yape / Plin' + (y.holder ? ' · ' + y.holder : ''), y.number));
+        if (y.exchangeNote) box.appendChild(note(y.exchangeNote));
+      }
+    }
+
+    $('depNext2').addEventListener('click', function () {
+      if (!st.method) { setMsg($('depMsg2'), 'Elige un medio de pago.', true); return; }
+      renderInfo();
+      go(3);
+    });
+
+    $('depForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var ref = $('depRef').value.trim();
+      var file = $('depFile').files && $('depFile').files[0];
+      var msg = $('depMsg3');
+      if (ref.length < 4) { setMsg(msg, 'Escribe el número de orden, operación o ID de la transacción.', true); $('depRef').focus(); return; }
+      if (file && file.size > 8 * 1024 * 1024) { setMsg(msg, 'El comprobante pesa más de 8 MB.', true); return; }
+      var btn = $('depSend'); btn.disabled = true; btn.textContent = 'Enviando…';
+
+      var done = function () {
+        var name = METHOD_NAME[st.method];
+        $('depDoneText').textContent = 'Verificaremos tu depósito de ' + money(st.amount) + ' por ' + name +
+          ' y te avisaremos cuando quede registrado en tu inversión.';
+        go(4);
+        return load();
+      };
+      var p;
+      if (!LIVE) {
+        var list2 = store.get(DEP_KEY, []);
+        list2.push({ date: new Date().toISOString(), amount: st.amount, method: st.method, reference: ref });
+        store.set(DEP_KEY, list2);
+        p = Promise.resolve();
+      } else {
+        var path = null;
+        var up = Promise.resolve();
+        if (file) {
+          var ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+          path = S.uid + '/deposito-' + Date.now() + '.' + ext;
+          up = db.storage.from('receipts').upload(path, file, { contentType: file.type }).then(function (r) { if (r.error) throw r.error; });
+        }
+        p = up.then(function () {
+          return db.rpc('request_deposit', { p_amount: st.amount, p_method: st.method, p_reference: ref, p_receipt_path: path });
+        }).then(function (r) { if (r.error) throw r.error; });
+      }
+      p.then(done).catch(function (err) { setMsg(msg, errText(err), true); })
+        .then(function () { btn.disabled = false; btn.textContent = 'Ya realicé el pago'; });
+    });
+  }
+
   function initSoon() {
     document.addEventListener('click', function (e) {
       var t = e.target.closest('[data-soon]');
@@ -625,6 +858,7 @@
     safe(initKyc, 'kyc');
     safe(initSoon, 'pronto');
     safe(initLogout, 'salir');
+    safe(initDeposit, 'deposito');
     load().then(function () {
       $('loading').classList.add('is-done');
     }).catch(function (err) {

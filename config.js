@@ -11,7 +11,32 @@
     supabaseUrl: 'https://zyejqrogqffwmuxtmeyq.supabase.co',
     supabaseAnonKey: 'sb_publishable_hhBHvljHnzDCTjj9eU833Q_kprFkm52',
     siteUrl: 'https://jhoel1.com',
-    whatsapp: '51912536501'
+    whatsapp: '51912536501',
+
+    // Medios de pago que verá el inversionista en "Agregar capital".
+    // Deja un campo vacío ('') para no mostrarlo; si un medio queda sin datos,
+    // se le pide al cliente que solicite los datos por WhatsApp.
+    payments: {
+      binance: {
+        payId: '',            // tu Binance Pay ID (número), ej. '123456789'
+        payName: 'Jhoel 1%',  // nombre que verá el cliente en Binance Pay
+        usdtTrc20: '',        // dirección USDT red TRC20, ej. 'TXyz…'
+        usdtBep20: ''         // dirección USDT red BEP20 (BSC), opcional
+      },
+      bank: {
+        bankName: '',         // ej. 'BCP'
+        holder: '',           // titular de la cuenta
+        accountUsd: '',       // cuenta en dólares
+        cciUsd: '',           // CCI en dólares
+        accountPen: '',       // cuenta en soles (opcional)
+        cciPen: ''
+      },
+      yape: {
+        number: '',           // número de Yape / Plin
+        holder: '',
+        exchangeNote: 'Se convierte a dólares con el tipo de cambio del día.'
+      }
+    }
   };
 
   var db = null;

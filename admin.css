@@ -65,3 +65,9 @@ body.drawer-open { overflow: hidden; }
 @media (max-width: 460px) { .drawer .auth__grid { grid-template-columns: 1fr; } }
 .kpis--5 .kpi__value { font-size: clamp(1.4rem, 1.9vw, 1.8rem); overflow-wrap: normal; }
 .kpis--5 .kpi--hero .kpi__value { font-size: clamp(1.6rem, 2.3vw, 2.2rem); }
+
+.pay-chip { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.pay-chip--binance { color: #f0b90b; }
+.promo-check { display: flex; align-items: center; gap: 6px; font-size: .74rem; color: var(--muted); margin-top: 6px; cursor: pointer; }
+.promo-check input { accent-color: var(--gold); }
+@media (max-width: 900px) { .is-admin .tabbar { grid-template-columns: repeat(6, 1fr); } .is-admin .tabbar a { font-size: .6rem; } }

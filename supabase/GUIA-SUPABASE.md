@@ -19,6 +19,12 @@ Con esta guía tu web pasa del modo demostración a cuentas reales: registro, in
 
 Esto crea las tablas (perfiles, inversiones, movimientos, retiros, verificaciones), las reglas de seguridad y la carpeta privada `kyc` donde se guardan los documentos de identidad.
 
+### 2b. Depósitos ("Agregar capital")
+
+En otra consulta nueva del **SQL Editor**, pega el contenido de `supabase/02-depositos.sql` y pulsa **Run**. Crea las solicitudes de depósito y la carpeta privada `receipts` para los comprobantes.
+
+Luego completa tus datos de cobro en `config.js`, en el bloque `payments`: Binance Pay ID, direcciones USDT, cuentas bancarias y número de Yape. Si dejas un medio vacío, al cliente se le pide que solicite los datos por WhatsApp.
+
 ## 3. Configurar el inicio de sesión
 
 En **Authentication → URL Configuration**:
@@ -67,7 +73,8 @@ update public.profiles set role = 'admin' where email = 'tu-correo@ejemplo.com';
 | Tarea | Dónde |
 |---|---|
 | Ver capital total, retiros y verificaciones pendientes | Administración → Resumen |
-| Registrar el depósito de un cliente | Inversionistas → clic en la persona → *Registrar depósito inicial* (marca la promoción si corresponde) |
+| Confirmar un depósito avisado desde el panel | Depósitos → revisa que el dinero llegó → *Confirmar* (marca la promoción si es su primera inversión) |
+| Registrar a mano el depósito de un cliente | Inversionistas → clic en la persona → *Registrar depósito inicial* (marca la promoción si corresponde) |
 | Agregar capital a una inversión | Inversionistas → persona → *Agregar capital* |
 | Aprobar documentos de identidad | Verificaciones → *Ver archivo* → Aprobar o Rechazar (con motivo) |
 | Pagar un retiro | Haz la transferencia por tu banco/Yape/USDT y luego en Retiros pulsa *Marcar pagado* |
