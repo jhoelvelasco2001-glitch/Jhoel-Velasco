@@ -18,7 +18,7 @@
     // se le pide al cliente que solicite los datos por WhatsApp.
     payments: {
       binance: {
-        payId: '',            // tu Binance Pay ID (número), ej. '123456789'
+        payId: '223487041',   // tu Binance Pay ID
         payName: 'Jhoel 1%',  // nombre que verá el cliente en Binance Pay
         usdtTrc20: '',        // dirección USDT red TRC20, ej. 'TXyz…'
         usdtBep20: ''         // dirección USDT red BEP20 (BSC), opcional
