@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@300;400;500;600;700&display=swap">
-  <link rel="stylesheet" href="styles.css?v=20261009">
+  <link rel="stylesheet" href="styles.css?v=20261010">
 </head>
 <body>
 
@@ -78,6 +78,7 @@
 
     <!-- HERO -->
     <section class="hero" id="inicio">
+      <canvas class="hero__particles" id="heroParticles" aria-hidden="true"></canvas>
       <svg class="hero__bars" viewBox="0 0 600 300" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
@@ -120,11 +121,19 @@
             <a href="#simulador" class="btn btn--gold">Simular mi inversión</a>
             <a href="#que-es" class="btn btn--ghost">Conocer la plataforma</a>
           </div>
+          <ul class="trust-row reveal" aria-label="Datos clave">
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3Zm-3 9 2 2 4-4"/></svg>Verificación de identidad</li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>Retiro de ganancias en 48 h</li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19 10 13l4 4 6-8M14 9h6v6"/></svg>Desde US$100</li>
+          </ul>
         </div>
 
         <div class="hero__mark reveal" id="heroMark">
           <div class="hero__halo" aria-hidden="true"></div>
           <img src="assets/img/logo.webp" alt="Logotipo de Jhoel 1%" width="1254" height="1254">
+          <div class="chip-float chip-float--a" aria-hidden="true"><span class="chip-float__dot"></span><b>1%</b> mensual objetivo</div>
+          <div class="chip-float chip-float--b" aria-hidden="true"><b>+0.01%</b> por referido</div>
+          <div class="chip-float chip-float--c" aria-hidden="true"><b>2%</b> promoción de lanzamiento</div>
         </div>
       </div>
 
@@ -206,35 +215,68 @@
       </div>
       <div class="pillars__grid">
         <article class="pillar reveal">
-          <span class="pillar__n">01</span>
+          <span class="pillar__ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></span>
           <h3>Transparencia</h3>
           <p>Información clara sobre el funcionamiento de la plataforma.</p>
         </article>
         <article class="pillar reveal">
-          <span class="pillar__n">02</span>
+          <span class="pillar__ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></span>
           <h3>Gestión profesional</h3>
           <p>Seguimiento y administración de las operaciones.</p>
         </article>
         <article class="pillar reveal">
-          <span class="pillar__n">03</span>
+          <span class="pillar__ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 6.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.8 5 3.5 5 1.6 5 3.5-2.2 3-5 3-5-1.1-5-3"/></svg></span>
           <h3>Accesibilidad</h3>
           <p>Planes disponibles para distintos niveles de capital.</p>
         </article>
         <article class="pillar reveal">
-          <span class="pillar__n">04</span>
+          <span class="pillar__ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3Z"/></svg></span>
           <h3>Gestión de riesgo</h3>
           <p>Criterios orientados a proteger el capital.</p>
         </article>
         <article class="pillar reveal">
-          <span class="pillar__n">05</span>
+          <span class="pillar__ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M17 8h5M19.5 5.5v5"/></svg></span>
           <h3>Programa de referidos</h3>
           <p>Posibilidad de acceder a beneficios adicionales.</p>
         </article>
         <article class="pillar reveal">
-          <span class="pillar__n">06</span>
+          <span class="pillar__ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3"/></svg></span>
           <h3>Retiros</h3>
           <p>Solicitudes procesadas según los términos y condiciones de la plataforma.</p>
         </article>
+      </div>
+    </section>
+
+    <!-- CÓMO FUNCIONA -->
+    <section class="section steps-sec" id="como-funciona">
+      <div class="section__head section__head--center">
+        <p class="eyebrow reveal">03 — Cómo funciona</p>
+        <h2 class="reveal">Empieza a invertir en <span class="gold-text">cuatro pasos</span>.</h2>
+      </div>
+      <ol class="flow">
+        <li class="flow__step reveal">
+          <span class="flow__n">1</span>
+          <h3>Crea tu cuenta</h3>
+          <p>Regístrate en minutos con tu correo y tu número de WhatsApp.</p>
+        </li>
+        <li class="flow__step reveal">
+          <span class="flow__n">2</span>
+          <h3>Verifica tu identidad</h3>
+          <p>Sube tu documento, una selfie y un comprobante de domicilio.</p>
+        </li>
+        <li class="flow__step reveal">
+          <span class="flow__n">3</span>
+          <h3>Realiza tu depósito</h3>
+          <p>Desde US$100. Te enviamos los datos de pago por WhatsApp.</p>
+        </li>
+        <li class="flow__step reveal">
+          <span class="flow__n">4</span>
+          <h3>Sigue tu inversión</h3>
+          <p>Ve tu saldo y tu rentabilidad, y solicita retiros desde tu panel.</p>
+        </li>
+      </ol>
+      <div class="flow__cta reveal">
+        <button type="button" class="btn btn--gold" data-auth="register">Crear mi cuenta</button>
       </div>
     </section>
 
@@ -245,7 +287,7 @@
         <figcaption>Jhoel Velasco<br><span>CEO y Fundador</span></figcaption>
       </figure>
       <div class="founder__text">
-        <p class="eyebrow reveal">03 — Nuestro fundador</p>
+        <p class="eyebrow reveal">04 — Nuestro fundador</p>
         <h2 class="reveal">Jhoel Velasco</h2>
         <p class="founder__role reveal">CEO y Fundador de Jhoel 1%</p>
         <p class="reveal">
@@ -258,6 +300,13 @@
           a las inversiones para personas que desean participar en los mercados sin tener que
           operar directamente por cuenta propia.
         </p>
+        <div class="founder__stats reveal">
+          <div><strong>4+</strong><span>años operando en los mercados</span></div>
+          <div><strong>100%</strong><span>enfocado en la gestión de riesgo</span></div>
+        </div>
+        <blockquote class="founder__vision reveal">
+          <p>La visión de la empresa es combinar experiencia, disciplina, estrategia y tecnología dentro de una plataforma accesible para sus usuarios.</p>
+        </blockquote>
         <ul class="founder__values reveal">
           <li>Experiencia</li><li>Disciplina</li><li>Estrategia</li><li>Tecnología</li>
         </ul>
@@ -267,7 +316,7 @@
     <!-- PLANES -->
     <section class="section plans" id="planes">
       <div class="section__head">
-        <p class="eyebrow reveal">04 — Planes de inversión</p>
+        <p class="eyebrow reveal">05 — Planes de inversión</p>
         <h2 class="reveal">Desde <span class="gold-text">US$100</span> hasta <span class="gold-text">US$100,000</span>.</h2>
         <p class="section__lead reveal">Todos los planes acceden al mismo modelo de rentabilidad de la plataforma.</p>
       </div>
@@ -279,8 +328,9 @@
           <p>Rentabilidad objetivo para todos los planes, desde el primer dólar invertido.</p>
         </article>
         <article class="plan plan--featured reveal">
+          <span class="plan__badge">Más beneficios</span>
           <p class="plan__tag">Referidos</p>
-          <p class="plan__rate">+<strong>0.01%</strong><span>por referido válido</span></p>
+          <p class="plan__rate"><strong>+0.01%</strong><span>por referido válido</span></p>
           <p>Acumulable hasta un máximo adicional de <strong>+1%</strong>, para una rentabilidad promocional total de hasta <strong>2% mensual</strong>.</p>
         </article>
         <article class="plan reveal">
@@ -306,7 +356,7 @@
     <!-- SIMULADOR -->
     <section class="section sim" id="simulador">
       <div class="section__head">
-        <p class="eyebrow reveal">05 — Simulador</p>
+        <p class="eyebrow reveal">06 — Simulador</p>
         <h2 class="reveal">Visualiza tu proyección.</h2>
         <p class="section__lead reveal">Una herramienta ilustrativa para entender el modelo. No representa una promesa de resultados.</p>
       </div>
@@ -352,7 +402,7 @@
     <!-- RETIROS + RIESGO -->
     <section class="section trust" id="retiros">
       <article class="trust__block reveal">
-        <p class="eyebrow">06 — Retiros y disponibilidad del capital</p>
+        <p class="eyebrow">07 — Retiros y disponibilidad del capital</p>
         <h3>Un proceso claro, ordenado y transparente.</h3>
         <p>
           En Jhoel 1%, los usuarios podrán solicitar el retiro de las ganancias generadas de acuerdo
@@ -383,7 +433,7 @@
         </p>
       </article>
       <article class="trust__block trust__block--risk reveal" id="riesgo">
-        <p class="eyebrow">07 — Seguridad, transparencia y riesgo</p>
+        <p class="eyebrow">08 — Seguridad, transparencia y riesgo</p>
         <h3>Hablemos claro sobre el riesgo.</h3>
         <p>
           Toda inversión en mercados financieros implica riesgo y los resultados pueden variar.
@@ -707,18 +757,40 @@
   <div id="google_translate_element" hidden></div>
 
   <footer class="footer">
-    <div class="footer__brand">
-      <img src="assets/img/logo.webp" alt="" width="56" height="56" loading="lazy">
-      <p class="notranslate" translate="no">Jhoel <em>1%</em></p>
+    <div class="footer__top">
+      <div class="footer__col footer__col--brand">
+        <div class="footer__brand">
+          <img src="assets/img/logo.webp" alt="" width="56" height="56" loading="lazy">
+          <p class="notranslate" translate="no">Jhoel <em>1%</em></p>
+        </div>
+        <p class="footer__dream">Los sueños grandes se construyen <span class="gold-text">1% a la vez.</span></p>
+        <p class="footer__sub">Tú pones la visión. Nosotros te acompañamos a hacerla crecer, mes a mes.</p>
+      </div>
+      <nav class="footer__col" aria-label="Plataforma">
+        <h4>Plataforma</h4>
+        <a href="#que-es">Qué es Jhoel 1%</a>
+        <a href="#como-funciona">Cómo funciona</a>
+        <a href="#planes">Planes</a>
+        <a href="#simulador">Simulador</a>
+      </nav>
+      <nav class="footer__col" aria-label="Legal">
+        <h4>Legal</h4>
+        <a href="#terminos">Términos y Condiciones</a>
+        <a href="#retiros">Política de retiros</a>
+        <a href="#riesgo">Aviso de riesgo</a>
+      </nav>
+      <div class="footer__col">
+        <h4>Contacto</h4>
+        <a href="https://wa.me/51912536501" target="_blank" rel="noopener">WhatsApp +51 912 536 501</a>
+        <a href="#" data-auth="login">Iniciar sesión</a>
+        <a href="#" data-auth="register">Crear cuenta</a>
+      </div>
     </div>
-    <p class="footer__dream">Los sueños grandes se construyen <span class="gold-text">1% a la vez.</span></p>
-    <p class="footer__sub">Tú pones la visión. Nosotros te acompañamos a hacerla crecer, mes a mes.</p>
-    <nav class="footer__links" aria-label="Legal"><a href="#terminos">Términos y Condiciones</a><a href="#retiros">Política de retiros</a><a href="#riesgo">Aviso de riesgo</a></nav>
     <p class="footer__copy">© <span id="year">2026</span> Jhoel 1%. Todos los derechos reservados.</p>
   </footer>
 
   <script src="lib/supabase.js?v=2.117.3" defer></script>
   <script src="config.js?v=20261009" defer></script>
-  <script src="main.js?v=20261009b" defer></script>
+  <script src="main.js?v=20261010" defer></script>
 </body>
 </html>

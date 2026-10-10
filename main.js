@@ -111,6 +111,61 @@
   }
 
   /* ---------- Resplandor que sigue al cursor + tilt del logo ---------- */
+  /* ---------- Partículas doradas en el inicio ---------- */
+  function initParticles() {
+    var canvas = document.getElementById('heroParticles');
+    if (!canvas || !canvas.getContext) return;
+    var ctx = canvas.getContext('2d');
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = 0, h = 0, parts = [], visible = true;
+
+    function size() {
+      var r = canvas.getBoundingClientRect();
+      w = r.width; h = r.height;
+      canvas.width = w * dpr; canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      var n = Math.round(Math.min(90, w * h / 14000) * (reduced ? .4 : 1));
+      parts = [];
+      for (var i = 0; i < n; i++) parts.push(spawn(true));
+    }
+    function spawn(anywhere) {
+      return {
+        x: Math.random() * w,
+        y: anywhere ? Math.random() * h : h + 10,
+        r: Math.random() * 1.6 + .4,
+        vy: -(Math.random() * .35 + .12) * (reduced ? .3 : 1),
+        vx: (Math.random() - .5) * .15,
+        a: Math.random() * .6 + .2,
+        blue: Math.random() < .18
+      };
+    }
+    function frame() {
+      if (visible) {
+        ctx.clearRect(0, 0, w, h);
+        for (var i = 0; i < parts.length; i++) {
+          var p = parts[i];
+          p.x += p.vx; p.y += p.vy;
+          if (p.y < -10) parts[i] = p = spawn(false);
+          var fade = Math.min(1, p.y / (h * .35));
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = p.blue ? 'rgba(90,160,255,' + (p.a * fade) + ')' : 'rgba(240,205,120,' + (p.a * fade) + ')';
+          ctx.shadowColor = p.blue ? 'rgba(47,139,255,.8)' : 'rgba(233,196,106,.9)';
+          ctx.shadowBlur = 8;
+          ctx.fill();
+        }
+      }
+      requestAnimationFrame(frame);
+    }
+    size();
+    window.addEventListener('resize', size);
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (e) { visible = e[0].isIntersecting; }).observe(canvas);
+    }
+    requestAnimationFrame(frame);
+  }
+
   function initPointer() {
     if (!window.matchMedia('(hover: hover)').matches) return;
     var glow = document.querySelector('.cursor-glow');
@@ -616,6 +671,7 @@
     safe(initNav, 'nav');
     safe(initReveal, 'reveal');
     safe(initCounters, 'counters');
+    safe(initParticles, 'particles');
     safe(initPointer, 'pointer');
     safe(initSimulator, 'simulator');
     safe(initContact, 'contact');
