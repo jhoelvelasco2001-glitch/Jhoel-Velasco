@@ -1,6 +1,6 @@
 # Jhoel Velasco — Web de marca personal
 
-Web estática (HTML + CSS + JS, sin instalaciones). Para publicarla, sube todo el contenido de esta carpeta (incluido `.htaccess`) a Hostinger, Netlify o GitHub Pages.
+Web estática (HTML + CSS + JS, sin instalaciones). Cada página es un solo archivo: el diseño, las animaciones y las fotos van dentro del HTML, así que se ve bien aunque falte la carpeta `assets`. Para publicarla, sube todo el contenido de esta carpeta (incluido `.htaccess`) a Hostinger, Netlify o GitHub Pages.
 
 ## Páginas
 
@@ -17,4 +17,4 @@ Los enlaces están en `index.html` y en `completa.html` (en esta última, busca 
 
 ## Fotos
 
-Están en `assets/img/` en formato WebP. Si cambias una, mantén el mismo nombre de archivo.
+Las originales están en `assets/img/` (WebP). Las páginas las llevan incrustadas, así que para cambiar una foto pídele a Claude que la actualice. `assets/img/jhoel-retrato.webp` se usa además como vista previa al compartir el enlace en WhatsApp o redes.
